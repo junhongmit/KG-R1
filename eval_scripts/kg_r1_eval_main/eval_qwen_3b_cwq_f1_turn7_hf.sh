@@ -33,7 +33,7 @@ MAX_TURNS=7
 
 # ==================== END CONFIGURATION ====================
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3
+export CUDA_VISIBLE_DEVICES=0
 export DATA_DIR='data_kg'
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export HYDRA_FULL_ERROR=1
@@ -43,9 +43,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # Initialize environment (optional - only if init script exists)
-if [ -f "/nobackup/users/yeopjin/init_general.sh" ]; then
-    source /nobackup/users/yeopjin/init_general.sh
-fi
+# if [ -f "/nobackup/users/yeopjin/init_general.sh" ]; then
+#     source /nobackup/users/yeopjin/init_general.sh
+# fi
 
 # Change to project root
 cd "$PROJECT_ROOT"
@@ -111,6 +111,14 @@ PYTHONUNBUFFERED=1 python -m verl.trainer.main_eval \
     trainer.experiment_name=$EXPERIMENT_NAME \
     trainer.project_name=$WAND_PROJECT \
     trainer.default_local_dir="eval_results/eval_kg-r1/$EXPERIMENT_NAME" \
+    trainer.n_gpus_per_node=1 \
+    ray_init.num_cpus=8 \
+    actor_rollout_ref.rollout.gpu_memory_utilization=0.35 \
+    actor_rollout_ref.rollout.enforce_eager=true \
+    actor_rollout_ref.rollout.enable_chunked_prefill=false \
+    actor_rollout_ref.rollout.free_cache_engine=true \
+    actor_rollout_ref.rollout.max_num_batched_tokens=4096 \
+    actor_rollout_ref.rollout.max_num_seqs=32 \
     data.train_files="$TEST_FILE" \
     data.val_files="$TEST_FILE" \
     data.val_batch_size=$VAL_BATCH_SIZE \

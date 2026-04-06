@@ -401,6 +401,8 @@ reward_model:
     response_length_threshold: 3400
     debug_log_dir: evaluation_debug.log
     answer_score_mode: f1
+    use_legacy_entity_f1: false
+    use_exact_match_binary_for_passk: true
     # OTC (Optimal Turn Count) scaling configuration - set to false by default
     otc_scaling: false
     # Maximum number of turns for OTC scaling calculation

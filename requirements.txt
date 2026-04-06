@@ -14,3 +14,6 @@ vllm
 wandb
 IPython
 matplotlib
+peft
+torchdata
+cachetools

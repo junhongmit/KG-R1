@@ -124,6 +124,8 @@ class RayKGEvaluator(RayPPOTrainer):
         self.k_values = k_values or [1, 3, 5, 8]
         self.eval_samples = eval_samples  # 0 means evaluate all samples
         self.save_detailed_results = save_detailed_results
+        reward_kwargs = getattr(getattr(self.config, 'reward_model', None), 'reward_kwargs', {})
+        self.use_exact_match_binary_for_passk = reward_kwargs.get('use_exact_match_binary_for_passk', True)
         
         # Validate k_values
         max_k = max(self.k_values)
@@ -138,6 +140,7 @@ class RayKGEvaluator(RayPPOTrainer):
         
         print(f"KG Evaluator initialized with n_rollout_eval={self.n_rollout_eval}, k_values={self.k_values}")
         print(f"KG Search enabled: {self.use_search_generation}")
+        print(f"Pass@k exact-match source: {'exact_match_binary' if self.use_exact_match_binary_for_passk else 'exact_match'}")
     
     def _initialize_search_components(self):
         """Initialize KG search components that may not be set by parent."""
@@ -713,7 +716,7 @@ class RayKGEvaluator(RayPPOTrainer):
             
             if isinstance(reward_extra_info, dict):
                 # Extract all metrics from wandb metrics
-                metric_keys = ['exact_match', 'retrieval_quality', 'f1', 'precision', 'recall']
+                metric_keys = ['exact_match', 'exact_match_binary', 'retrieval_quality', 'f1', 'precision', 'recall']
                 for key in metric_keys:
                     if key in reward_extra_info:
                         values = reward_extra_info[key]
@@ -789,7 +792,13 @@ class RayKGEvaluator(RayPPOTrainer):
         batch_size = len(uid_info)
         
         # Get exact match and retrieval quality scores
-        em_scores = non_tensor_batch.get('em_score', non_tensor_batch.get('exact_match', np.zeros(batch_size)))
+        if self.use_exact_match_binary_for_passk:
+            em_scores = non_tensor_batch.get(
+                'exact_match_binary',
+                non_tensor_batch.get('em_score', non_tensor_batch.get('exact_match', np.zeros(batch_size)))
+            )
+        else:
+            em_scores = non_tensor_batch.get('em_score', non_tensor_batch.get('exact_match', np.zeros(batch_size)))
         retrieval_scores = non_tensor_batch.get('retrieval_score', non_tensor_batch.get('retrieval_quality', np.zeros(batch_size)))
         
         # Get F1, precision, recall scores for F1@K metrics

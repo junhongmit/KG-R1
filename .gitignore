@@ -1,1 +1,7 @@
 data_kg
+data_multitq_kg
+outputs/
+__pycache__
+eval_results/
+*.egg-info
+.codex
