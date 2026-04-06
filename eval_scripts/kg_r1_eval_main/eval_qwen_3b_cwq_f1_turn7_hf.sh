@@ -4,9 +4,10 @@
 # Evaluates models directly from HuggingFace Hub (no local checkpoint needed)
 #
 # Usage:
-#   ./eval_qwen_3b_cwq_f1_turn7.sh                          # Use default HF model
-#   ./eval_qwen_3b_cwq_f1_turn7.sh JinyeopSong/KG-R1_test   # Specify HF model
-#   ./eval_qwen_3b_cwq_f1_turn7.sh your-org/your-model cwq  # Specify model and dataset
+#   ./eval_qwen_3b_cwq_f1_turn7.sh                            # Use default HF model
+#   ./eval_qwen_3b_cwq_f1_turn7.sh JinyeopSong/KG-R1_test     # Specify HF model
+#   ./eval_qwen_3b_cwq_f1_turn7.sh your-org/your-model cwq    # Specify model and dataset
+#   ./eval_qwen_3b_cwq_f1_turn7.sh "" cwq reward_model.reward_kwargs.use_legacy_entity_f1=true
 
 # ==================== CONFIGURATION ====================
 
@@ -55,6 +56,7 @@ rm -rf ~/.cache/torch/triton/
 # Parse command line arguments
 HF_MODEL="${1:-$DEFAULT_HF_MODEL}"
 DATASET_NAME="${2:-$DEFAULT_DATASET}"
+EXTRA_OVERRIDES=("${@:3}")
 
 # Calculate MAX_K for experiment naming
 MAX_K=$(echo $K_VALUES | tr ' ' '\n' | sort -nr | head -1)
@@ -69,6 +71,9 @@ echo "K values: $K_VALUES"
 echo "Max turns: $MAX_TURNS"
 echo "Validation batch size: $VAL_BATCH_SIZE"
 echo "Experiment name: $EXPERIMENT_NAME"
+if [ ${#EXTRA_OVERRIDES[@]} -gt 0 ]; then
+    echo "Extra Hydra overrides: ${EXTRA_OVERRIDES[*]}"
+fi
 echo "=========================================================================="
 
 # Set dataset files (relative to project root)
@@ -126,6 +131,7 @@ PYTHONUNBUFFERED=1 python -m verl.trainer.main_eval \
     +actor_rollout_ref.model.is_huggingface=true \
     trainer.resume_mode=none \
     reward_model.reward_kwargs.debug_log_dir="${EXPERIMENT_NAME}_debug.log" \
+    "${EXTRA_OVERRIDES[@]}" \
     2>&1 | tee "eval_results/eval_kg-r1/${EXPERIMENT_NAME}/evaluation.log"
 
 echo ""
