@@ -10,6 +10,9 @@ Reward Structure:
 - Pass@K: Bootstrap sampling metrics for GRPO multiple responses
 """
 
+import json
+import os
+
 import torch
 import numpy as np
 from typing import Dict, List, Any, Tuple, Optional
@@ -50,8 +53,15 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         
         # Answer score mode: 'binary' (default) or 'f1'
         self.answer_score_mode = reward_kwargs.get('answer_score_mode', 'binary')
+        # Binary exact-match mode:
+        # - strict: current KG-aware exact match
+        # - tog_substring: ToG-style normalized substring match over the extracted answer string
+        self.binary_exact_match_mode = reward_kwargs.get('binary_exact_match_mode', 'strict')
         # Compatibility flag to restore the pre-fix entity-level F1 behavior.
         self.use_legacy_entity_f1 = reward_kwargs.get('use_legacy_entity_f1', False)
+        # Optional JSONL path for dumping cases where binary exact match is 0 but the
+        # selected exact-match score source still shows a positive match signal.
+        self.exact_match_mismatch_jsonl = reward_kwargs.get('exact_match_mismatch_jsonl')
         
         # Clean logging control - set this to True to see full assistant responses
         self.show_full_responses = reward_kwargs.get('show_full_responses', False)
@@ -64,7 +74,10 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
             print(f"[MultiTurnReward] Turn weights: {self.turn_specific_weights}")
             print(f"[MultiTurnReward] Global weights: {self.global_weights}")
             print(f"[MultiTurnReward] Answer score mode: {self.answer_score_mode}")
+            print(f"[MultiTurnReward] Binary exact-match mode: {self.binary_exact_match_mode}")
             print(f"[MultiTurnReward] Legacy entity F1: {self.use_legacy_entity_f1}")
+            if self.exact_match_mismatch_jsonl:
+                print(f"[MultiTurnReward] Exact-match mismatch JSONL: {self.exact_match_mismatch_jsonl}")
             print(f"[MultiTurnReward] OTC scaling: {self.otc_scaling} (max_turns: {self.max_turns})")
             if self.show_full_responses:
                 print(f"[MultiTurnReward] Full response logging enabled")
@@ -1027,9 +1040,16 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         
         # Token-level enhanced metrics removed - using entity-level calculations only
         
-        # Always calculate entity-level metrics for both exact match and F1
-        # Pass interaction_history and dataset info to enable MultiTQ temporal handling
-        entity_level_exact_match = self._calculate_entity_level_match(assistant_response, ground_truth_answers, interaction_history=interaction_history, dataset_name=data_source)
+        # Always calculate entity-level metrics for both exact match and F1.
+        # Compute both strict KG-aware EM and ToG-style substring EM, then select one.
+        strict_exact_match = self._calculate_entity_level_match(
+            assistant_response,
+            ground_truth_answers,
+            interaction_history=interaction_history,
+            dataset_name=data_source,
+        )
+        tog_substring_exact_match = self._calculate_tog_substring_exact_match(predicted_answer, ground_truth_answers, dataset_name=data_source)
+        entity_level_exact_match = self._select_binary_exact_match(strict_exact_match, tog_substring_exact_match)
         
         # Calculate proper entity-level F1, precision, and recall
         # Pass raw ground truth to properly handle multi-entity cases
@@ -1044,6 +1064,8 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         
         data_item.answer_metrics.update({
             'exact_match_binary': float(entity_level_exact_match),
+            'exact_match_binary_strict': float(strict_exact_match),
+            'exact_match_binary_tog_substring': float(tog_substring_exact_match),
             'f1': float(entity_level_f1),
             'precision': float(entity_level_precision),
             'recall': float(entity_level_recall)
@@ -1074,8 +1096,102 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
                 print(f"\n[full_assistant_response]")
                 print(assistant_response)
                 print("=" * 80)
+
+        if self.exact_match_mismatch_jsonl and float(entity_level_exact_match) == 0.0 and float(final_score) > 0.0:
+            self._append_exact_match_mismatch_jsonl(
+                data_item=data_item,
+                interaction_history=interaction_history,
+                dataset_name=data_source,
+                assistant_response=assistant_response,
+                predicted_answer=predicted_answer,
+                ground_truth_raw=ground_truth_raw,
+                ground_truth_answers=ground_truth_answers,
+                exact_match_binary=float(entity_level_exact_match),
+                exact_match_binary_strict=float(strict_exact_match),
+                exact_match_binary_tog_substring=float(tog_substring_exact_match),
+                exact_match_signal=float(final_score),
+                f1=float(entity_level_f1),
+                precision=float(entity_level_precision),
+                recall=float(entity_level_recall),
+            )
         
         return float(final_score)
+
+    def _append_exact_match_mismatch_jsonl(
+        self,
+        data_item,
+        interaction_history: Dict,
+        dataset_name: str,
+        assistant_response: str,
+        predicted_answer: Optional[str],
+        ground_truth_raw,
+        ground_truth_answers: List[str],
+        exact_match_binary: float,
+        exact_match_binary_strict: float,
+        exact_match_binary_tog_substring: float,
+        exact_match_signal: float,
+        f1: float,
+        precision: float,
+        recall: float,
+    ) -> None:
+        """Append mismatch cases to a JSONL file for live inspection during evaluation."""
+        try:
+            output_path = os.path.abspath(self.exact_match_mismatch_jsonl)
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+            non_tensor_batch = getattr(data_item, "non_tensor_batch", {}) or {}
+            reward_model_info = non_tensor_batch.get("reward_model", {}) or {}
+
+            record = {
+                "dataset_name": dataset_name,
+                "uid": self._safe_json_value(non_tensor_batch.get("uid")),
+                "sample_id": self._safe_json_value(non_tensor_batch.get("sample_id")),
+                "data_source": self._safe_json_value(non_tensor_batch.get("data_source")),
+                "original_query": self._safe_json_value(interaction_history.get("original_query")),
+                "question": self._safe_json_value(non_tensor_batch.get("question")),
+                "raw_prompt": self._safe_json_value(non_tensor_batch.get("raw_prompt")),
+                "assistant_response": assistant_response,
+                "predicted_answer": predicted_answer,
+                "ground_truth_raw": self._safe_json_value(ground_truth_raw),
+                "ground_truth_answers": [self._safe_json_value(x) for x in ground_truth_answers],
+                "exact_match_binary": exact_match_binary,
+                "exact_match_binary_mode": self.binary_exact_match_mode,
+                "exact_match_binary_strict": exact_match_binary_strict,
+                "exact_match_binary_tog_substring": exact_match_binary_tog_substring,
+                "exact_match_signal": exact_match_signal,
+                "f1": f1,
+                "precision": precision,
+                "recall": recall,
+                "answer_score_mode": self.answer_score_mode,
+                "use_legacy_entity_f1": self.use_legacy_entity_f1,
+                "reward_model_ground_truth": self._safe_json_value(reward_model_info.get("ground_truth")),
+                "actions": self._safe_json_value(interaction_history.get("actions")),
+                "all_observations": self._safe_json_value(interaction_history.get("all_observations")),
+            }
+
+            with open(output_path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except Exception as exc:
+            if self.verbose:
+                print(f"[exact_match_mismatch_jsonl] Failed to append mismatch record: {exc}")
+
+    def _safe_json_value(self, value):
+        """Convert numpy/object values into JSON-serializable Python values."""
+        if value is None:
+            return None
+        if isinstance(value, (str, int, float, bool)):
+            return value
+        if isinstance(value, np.ndarray):
+            return value.tolist()
+        if isinstance(value, dict):
+            return {str(k): self._safe_json_value(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [self._safe_json_value(v) for v in value]
+        try:
+            json.dumps(value)
+            return value
+        except TypeError:
+            return str(value)
     
     def _extract_final_answer(self, response_text: str) -> str:
         """
@@ -1127,6 +1243,40 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         # Use the existing em_check_kg function for consistency
         # Pass interaction_history and dataset_name to enable MultiTQ temporal handling
         return em_check_kg(predicted_answer, ground_truth_answers, dataset_name=dataset_name, verbose=False, interaction_history=interaction_history)
+
+    def _calculate_tog_substring_exact_match(self, predicted_answer: str, ground_truth_answers: List[str], dataset_name: str = None) -> float:
+        """ToG-style binary EM: normalized whole-string equality/substring matching."""
+        if not predicted_answer or not ground_truth_answers:
+            return 0.0
+
+        normalized_prediction = normalize_answer(predicted_answer, dataset_name)
+        if not normalized_prediction:
+            return 0.0
+
+        for gold_answer in ground_truth_answers:
+            normalized_gold = normalize_answer(gold_answer, dataset_name)
+            if not normalized_gold:
+                continue
+            if (
+                normalized_prediction == normalized_gold
+                or normalized_prediction in normalized_gold
+                or normalized_gold in normalized_prediction
+            ):
+                return 1.0
+        return 0.0
+
+    def _select_binary_exact_match(self, strict_exact_match: float, tog_substring_exact_match: float) -> float:
+        """Select the binary EM variant used for logging/pass@k."""
+        if self.binary_exact_match_mode == 'strict':
+            return float(strict_exact_match)
+        if self.binary_exact_match_mode == 'tog_substring':
+            return float(tog_substring_exact_match)
+        if self.verbose:
+            print(
+                f"[exact_match] Warning: unknown binary_exact_match_mode "
+                f"'{self.binary_exact_match_mode}', falling back to strict"
+            )
+        return float(strict_exact_match)
     
     def _normalize_answer_for_comparison(self, answer: str) -> str:
         """

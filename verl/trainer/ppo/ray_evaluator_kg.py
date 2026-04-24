@@ -716,7 +716,16 @@ class RayKGEvaluator(RayPPOTrainer):
             
             if isinstance(reward_extra_info, dict):
                 # Extract all metrics from wandb metrics
-                metric_keys = ['exact_match', 'exact_match_binary', 'retrieval_quality', 'f1', 'precision', 'recall']
+                metric_keys = [
+                    'exact_match',
+                    'exact_match_binary',
+                    'exact_match_binary_strict',
+                    'exact_match_binary_tog_substring',
+                    'retrieval_quality',
+                    'f1',
+                    'precision',
+                    'recall',
+                ]
                 for key in metric_keys:
                     if key in reward_extra_info:
                         values = reward_extra_info[key]

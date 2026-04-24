@@ -121,7 +121,7 @@ Paper: [link1](https://arxiv.org/pdf/2503.09516), [link2](https://arxiv.org/abs/
 
 ### KG-R1 environment
 ```bash
-conda create -n kgr1 python=3.9
+conda create -n kgr1 python=3.10
 conda activate kgr1
 # install torch [or you can skip this step and let vllm to install the correct version for you]
 pip install torch==2.4.0 --index-url https://download.pytorch.org/whl/cu121
@@ -132,6 +132,7 @@ pip3 install vllm==0.6.3 # or you can install 0.5.4, 0.4.2 and 0.3.1
 pip install -e .
 
 # flash attention 2
+conda install -c nvidia cuda-toolkit=12.1
 pip3 install flash-attn --no-build-isolation
 pip install wandb
 
