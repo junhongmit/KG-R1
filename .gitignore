@@ -13,3 +13,4 @@ baselines/results/*
 verl_checkpoints/
 freebase-rdf-latest.gz
 scripts/freebase_mid_gid_to_names.json
+run/
