@@ -2,11 +2,11 @@
 
 # Unified KG Server Startup Script for Other KGQA Benchmarks
 # Usage: ./start_unified_kg_server.sh <dataset> [workers]
-# Datasets: simpleqa, grailqa, trex, qald10en, zero_shot_re
+# Datasets: simpleqa, grailqa, trex, qald10en, zero_shot_re, multitq
 
 if [ $# -lt 1 ]; then
     echo "❌ Usage: $0 <dataset> [workers]"
-    echo "📋 Available datasets: simpleqa, grailqa, trex, qald10en, zero_shot_re"
+    echo "📋 Available datasets: simpleqa, grailqa, trex, qald10en, zero_shot_re, multitq"
     echo "📋 Example: $0 simpleqa 16"
     echo "📋 Example: $0 grailqa 8"
     exit 1
@@ -22,6 +22,7 @@ declare -A DATASET_PORTS=(
     ["trex"]="9011"
     ["qald10en"]="9010"
     ["zero_shot_re"]="9012"
+    ["multitq"]="9013"
 )
 
 # Get port for dataset
@@ -41,6 +42,7 @@ export KG_USE_ENTITIES_TEXT="true"  # All other benchmarks use entities_text.txt
 export KG_RELATION_FORMAT="flat"
 export KG_ENABLED_ACTIONS="get_head_relations,get_tail_relations,get_head_entities,get_tail_entities,get_conditional_relations"
 export KG_THREAD_WORKERS="$WORKERS"
+export MULTITQ_DATA_PATH="${MULTITQ_DATA_PATH:-./data_multitq_kg/MultiTQ}"
 
 # Kill any existing server on this port
 EXISTING_PID=$(lsof -ti:$PORT 2>/dev/null)
@@ -67,8 +69,17 @@ echo "🔧 Launching uvicorn server with optimized limits..."
 echo "   - File descriptors: $(ulimit -n)"
 echo "   - Stack size: $(ulimit -s)KB"
 
-uvicorn kg_r1.search.server:app --host "0.0.0.0" --port $PORT --workers 4 \
-  --backlog 2048 \
-  --limit-max-requests 50000 \
-  --timeout-keep-alive 60 \
-  --timeout-graceful-shutdown 60
+if [ "$DATASET" = "multitq" ]; then
+  echo "   - MultiTQ raw data path: $MULTITQ_DATA_PATH"
+  uvicorn kg_r1.search_multiTQ.server_multitq:app --host "0.0.0.0" --port $PORT --workers 1 \
+    --backlog 2048 \
+    --limit-max-requests 50000 \
+    --timeout-keep-alive 60 \
+    --timeout-graceful-shutdown 60
+else
+  uvicorn kg_r1.search.server:app --host "0.0.0.0" --port $PORT --workers 4 \
+    --backlog 2048 \
+    --limit-max-requests 50000 \
+    --timeout-keep-alive 60 \
+    --timeout-graceful-shutdown 60
+fi

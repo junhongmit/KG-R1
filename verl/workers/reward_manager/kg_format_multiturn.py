@@ -56,9 +56,7 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         # Binary exact-match mode:
         # - strict: current KG-aware exact match
         # - tog_substring: ToG-style normalized substring match over the extracted answer string
-        self.binary_exact_match_mode = reward_kwargs.get('binary_exact_match_mode', 'strict')
-        # Compatibility flag to restore the pre-fix entity-level F1 behavior.
-        self.use_legacy_entity_f1 = reward_kwargs.get('use_legacy_entity_f1', False)
+        self.binary_exact_match_mode = reward_kwargs.get('binary_exact_match_mode', 'tog_substring')
         # Optional JSONL path for dumping cases where binary exact match is 0 but the
         # selected exact-match score source still shows a positive match signal.
         self.exact_match_mismatch_jsonl = reward_kwargs.get('exact_match_mismatch_jsonl')
@@ -75,7 +73,6 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
             print(f"[MultiTurnReward] Global weights: {self.global_weights}")
             print(f"[MultiTurnReward] Answer score mode: {self.answer_score_mode}")
             print(f"[MultiTurnReward] Binary exact-match mode: {self.binary_exact_match_mode}")
-            print(f"[MultiTurnReward] Legacy entity F1: {self.use_legacy_entity_f1}")
             if self.exact_match_mismatch_jsonl:
                 print(f"[MultiTurnReward] Exact-match mismatch JSONL: {self.exact_match_mismatch_jsonl}")
             print(f"[MultiTurnReward] OTC scaling: {self.otc_scaling} (max_turns: {self.max_turns})")
@@ -1163,7 +1160,6 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
                 "precision": precision,
                 "recall": recall,
                 "answer_score_mode": self.answer_score_mode,
-                "use_legacy_entity_f1": self.use_legacy_entity_f1,
                 "reward_model_ground_truth": self._safe_json_value(reward_model_info.get("ground_truth")),
                 "actions": self._safe_json_value(interaction_history.get("actions")),
                 "all_observations": self._safe_json_value(interaction_history.get("all_observations")),
@@ -1327,9 +1323,6 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         Returns:
             Dict with f1, precision, and recall scores
         """
-        if self.use_legacy_entity_f1:
-            return self._calculate_entity_level_f1_precision_recall_legacy(predicted_answer, ground_truth_raw)
-
         if not predicted_answer:
             return {'f1': 0.0, 'precision': 0.0, 'recall': 0.0}
 
@@ -1455,81 +1448,6 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
             'recall': recall
         }
 
-    def _calculate_entity_level_f1_precision_recall_legacy(self, predicted_answer: str, ground_truth_raw) -> Dict[str, float]:
-        """Compatibility path that reproduces the pre-fix entity-level F1 behavior."""
-        if not predicted_answer:
-            return {'f1': 0.0, 'precision': 0.0, 'recall': 0.0}
-
-        normalized_predicted = normalize_answer(predicted_answer)
-        if not normalized_predicted:
-            return {'f1': 0.0, 'precision': 0.0, 'recall': 0.0}
-
-        if isinstance(ground_truth_raw, dict):
-            target_texts = ground_truth_raw.get("target_text", [])
-            target_kb_ids = ground_truth_raw.get("target_kb_id", [])
-
-            if not isinstance(target_texts, list):
-                target_texts = [target_texts] if target_texts else []
-            if not isinstance(target_kb_ids, list):
-                target_kb_ids = [target_kb_ids] if target_kb_ids else []
-        else:
-            if isinstance(ground_truth_raw, str):
-                ground_truth_answers = [ground_truth_raw]
-            elif isinstance(ground_truth_raw, list):
-                ground_truth_answers = ground_truth_raw
-            else:
-                ground_truth_answers = [str(ground_truth_raw)]
-
-            normalized_gt_entities = set()
-            for gt_answer in ground_truth_answers:
-                if gt_answer:
-                    normalized_gt = normalize_answer(gt_answer)
-                    if normalized_gt:
-                        normalized_gt_entities.add(normalized_gt)
-
-            if not normalized_predicted and not normalized_gt_entities:
-                return {'f1': 1.0, 'precision': 1.0, 'recall': 1.0}
-            if not normalized_predicted:
-                return {'f1': 0.0, 'precision': 0.0, 'recall': 0.0}
-            if not normalized_gt_entities:
-                return {'f1': 0.0, 'precision': 0.0, 'recall': 1.0}
-
-            gt_entity_found = any(gt_entity in normalized_predicted for gt_entity in normalized_gt_entities)
-            precision = 1.0 if gt_entity_found else 0.0
-            recall = 1.0 if gt_entity_found else 0.0
-            f1 = 0.0 if precision + recall == 0 else 2 * (precision * recall) / (precision + recall)
-            return {'f1': f1, 'precision': precision, 'recall': recall}
-
-        num_entities = max(len(target_texts), len(target_kb_ids))
-        if num_entities == 0:
-            return {'f1': 0.0, 'precision': 0.0, 'recall': 1.0}
-
-        entities_found = []
-        for i in range(num_entities):
-            entity_matched = False
-
-            if i < len(target_texts) and target_texts[i]:
-                normalized_text = normalize_answer(str(target_texts[i]))
-                if normalized_text and normalized_text in normalized_predicted:
-                    entity_matched = True
-
-            if not entity_matched and i < len(target_kb_ids) and target_kb_ids[i]:
-                normalized_kb = normalize_answer(str(target_kb_ids[i]))
-                if normalized_kb and normalized_kb in normalized_predicted:
-                    entity_matched = True
-
-            entities_found.append(entity_matched)
-
-        num_found = sum(entities_found)
-        precision = 1.0 if num_found > 0 else 0.0
-        recall = num_found / num_entities
-        f1 = 0.0 if precision + recall == 0 else 2 * (precision * recall) / (precision + recall)
-        return {
-            'f1': f1,
-            'precision': precision,
-            'recall': recall,
-        }
-    
     def _calculate_global_retrieval_quality_reward(self, data_item, interaction_history: Dict) -> float:
         """
         Calculate global retrieval quality reward across all turns.

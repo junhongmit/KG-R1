@@ -6,3 +6,4 @@ eval_results/
 *.egg-info
 .codex
 results/*
+baselines/results/*

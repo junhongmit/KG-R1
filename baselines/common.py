@@ -222,8 +222,75 @@ def _to_string_list(value: Any) -> List[str]:
     return [str(value)]
 
 
-def load_samples(parquet_path: Path, max_samples: int = 0, start_index: int = 0) -> List[BaselineSample]:
-    dataframe = pd.read_parquet(parquet_path)
+def _extract_answers_from_json_row(row: Dict[str, Any]) -> List[str]:
+    answer = row.get("answer", row.get("answers", []))
+    if isinstance(answer, dict):
+        return [str(value) for value in answer.values() if value is not None]
+    if isinstance(answer, list):
+        answers: List[str] = []
+        for item in answer:
+            if isinstance(item, dict):
+                value = item.get("entity_name") or item.get("answer") or item.get("answer_argument")
+                if value is not None:
+                    answers.append(str(value))
+            elif item is not None:
+                answers.append(str(item))
+        return answers
+    if answer is None:
+        return []
+    return [str(answer)]
+
+
+def _extract_question_from_json_row(row: Dict[str, Any]) -> str:
+    for key in ("question", "RawQuestion", "input", "sentence", "claim"):
+        value = row.get(key)
+        if value:
+            return str(value)
+    return ""
+
+
+def _load_json_rows(path: Path) -> List[Dict[str, Any]]:
+    if path.suffix == ".jsonl":
+        return read_jsonl(path)
+    with open(path, "r", encoding="utf-8") as fin:
+        payload = json.load(fin)
+    if not isinstance(payload, list):
+        raise ValueError(f"Expected JSON list in {path}")
+    return payload
+
+
+def load_json_samples(json_path: Path, dataset_name: str, max_samples: int = 0, start_index: int = 0) -> List[BaselineSample]:
+    rows = _load_json_rows(json_path)
+    if start_index > 0:
+        rows = rows[start_index:]
+    if max_samples > 0:
+        rows = rows[:max_samples]
+
+    samples: List[BaselineSample] = []
+    for row_offset, row in enumerate(rows):
+        idx = start_index + row_offset
+        question = _extract_question_from_json_row(row)
+        sample_id = str(row.get("id", row.get("qid", row.get("uid", f"{dataset_name}-{idx}"))))
+        samples.append(
+            BaselineSample(
+                idx=idx,
+                dataset_name=dataset_name,
+                sample_id=sample_id,
+                question=question,
+                prompt=question,
+                ground_truths=_extract_answers_from_json_row(row),
+                raw_prompt=question,
+                extra_info={key: value for key, value in row.items() if key not in {"answer", "answers"}},
+            )
+        )
+    return samples
+
+
+def load_samples(data_path: Path, max_samples: int = 0, start_index: int = 0, dataset_name: Optional[str] = None) -> List[BaselineSample]:
+    if data_path.suffix in {".json", ".jsonl"}:
+        return load_json_samples(data_path, dataset_name or data_path.stem, max_samples=max_samples, start_index=start_index)
+
+    dataframe = pd.read_parquet(data_path)
     if start_index > 0:
         dataframe = dataframe.iloc[start_index:]
     if max_samples > 0:
@@ -292,7 +359,7 @@ def openai_chat_completion(
     top_p: float,
     timeout: int,
     n: int = 1,
-) -> Tuple[List[str], float]:
+) -> Tuple[List[str], float, Dict[str, Optional[int]]]:
     url = api_base.rstrip("/") + "/chat/completions"
     payload = {
         "model": model,
@@ -321,7 +388,13 @@ def openai_chat_completion(
     for choice in choices:
         message = choice.get("message", {})
         texts.append(str(message.get("content", "")).strip())
-    return texts, elapsed
+    usage_payload = response_payload.get("usage") or {}
+    usage = {
+        "prompt_tokens": usage_payload.get("prompt_tokens"),
+        "completion_tokens": usage_payload.get("completion_tokens"),
+        "total_tokens": usage_payload.get("total_tokens"),
+    }
+    return texts, elapsed, usage
 
 
 def build_vanilla_prompt(question: str) -> str:

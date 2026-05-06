@@ -21,6 +21,7 @@ from baselines.common import (
     read_jsonl,
 )
 from baselines.evaluate import evaluate_records, write_evaluation_outputs
+from baselines.unified_report import write_unified_report
 
 PromptBuilder = Callable[[str], str]
 ResponseParser = Callable[[str], str]
@@ -28,7 +29,7 @@ Aggregator = Callable[[Sequence[str]], str]
 
 
 def add_common_args(parser: argparse.ArgumentParser, strategy_name: str, default_n_rollouts: int) -> None:
-    parser.add_argument("--dataset", required=True, choices=["cwq", "webqsp"], help="Dataset to evaluate.")
+    parser.add_argument("--dataset", required=True, choices=["cwq", "webqsp", "simpleqa", "grailqa", "trex", "qald"], help="Dataset to evaluate.")
     parser.add_argument("--data_file", default=None, help="Override parquet input path.")
     parser.add_argument("--api_base", default=DEFAULT_API_BASE, help="OpenAI-compatible API base.")
     parser.add_argument("--api_key", default=DEFAULT_API_KEY, help="API key for the OpenAI-compatible server.")
@@ -53,7 +54,16 @@ def add_common_args(parser: argparse.ArgumentParser, strategy_name: str, default
 
 
 def default_data_file(dataset: str) -> Path:
-    return Path(__file__).resolve().parents[1] / "data_kg" / f"{dataset}_search_augmented_initial_entities" / "test.parquet"
+    if dataset in {"cwq", "webqsp"}:
+        return Path(__file__).resolve().parents[1] / "data_kg" / f"{dataset}_search_augmented_initial_entities" / "test.parquet"
+    root = Path(__file__).resolve().parents[2]
+    files = {
+        "simpleqa": root / "data" / "other_kgqa" / "simpleqa.json",
+        "grailqa": root / "data" / "other_kgqa" / "grailqa.json",
+        "trex": root / "data" / "other_kgqa" / "trex.json",
+        "qald": root / "data" / "other_kgqa" / "qald_10-en.json",
+    }
+    return files[dataset]
 
 
 def get_output_paths(args: argparse.Namespace, strategy_name: str) -> Dict[str, Path]:
@@ -71,7 +81,6 @@ def get_output_paths(args: argparse.Namespace, strategy_name: str) -> Dict[str, 
         "run_dir": run_dir,
         "predictions": run_dir / "predictions.jsonl",
         "progress": run_dir / "predictions.jsonl.progress.json",
-        "metrics": run_dir / "metrics.json",
         "evaluated": run_dir / "predictions_evaluated.jsonl",
     }
 
@@ -117,7 +126,7 @@ def _run_one_sample(
         retries = 0
         while True:
             try:
-                texts, latency = openai_chat_completion(
+                texts, latency, usage = openai_chat_completion(
                     api_base=args.api_base,
                     api_key=args.api_key,
                     model=model_name,
@@ -137,6 +146,9 @@ def _run_one_sample(
                         "rollout_idx": rollout_idx,
                         "temperature": temperature,
                         "latency_sec": latency,
+                        "prompt_tokens": usage.get("prompt_tokens"),
+                        "completion_tokens": usage.get("completion_tokens"),
+                        "total_tokens": usage.get("total_tokens"),
                     }
                 )
                 break
@@ -182,7 +194,7 @@ def run_baseline(
             path.parent.mkdir(parents=True, exist_ok=True)
 
     data_file = Path(args.data_file) if args.data_file else default_data_file(args.dataset)
-    samples = load_samples(data_file, max_samples=args.max_samples, start_index=args.start_index)
+    samples = load_samples(data_file, max_samples=args.max_samples, start_index=args.start_index, dataset_name=args.dataset)
     completed_indices = load_completed_indices(paths["predictions"], args.retry_errors_on_resume)
     pending_samples = [sample for sample in samples if sample.idx not in completed_indices]
 
@@ -255,12 +267,30 @@ def run_baseline(
         input_path=paths["predictions"],
         summary=evaluation["summary"],
         detailed_records=evaluation["detailed_records"],
-        summary_path=paths["metrics"],
         detailed_path=paths["evaluated"],
+        write_summary=False,
+    )
+    write_unified_report(
+        baseline=strategy_name,
+        dataset=args.dataset,
+        output_file=str(paths["predictions"]),
+        metrics={
+            "hits@1": evaluation["summary"].get("exact_match_pass@1/mean", evaluation["summary"].get("exact_match/mean")),
+            "exact_match": evaluation["summary"].get("exact_match/mean"),
+            "f1": evaluation["summary"].get("f1/mean"),
+            "precision": evaluation["summary"].get("precision/mean"),
+            "recall": evaluation["summary"].get("recall/mean"),
+        },
+        counts={
+            "total_samples": evaluation["summary"].get("num_questions", len(ordered_records)),
+            "evaluated_samples": evaluation["summary"].get("num_questions", len(ordered_records)),
+            "error": evaluation["summary"].get("num_failed", 0),
+        },
+        records=ordered_records,
     )
 
     print(f"Generation complete: {paths['predictions']}")
-    print(f"Metrics saved to: {paths['metrics']}")
+    print(f"Unified metrics saved next to predictions")
     for k in k_values:
         print(f"Pass@{k} exact match: {evaluation['summary'][f'exact_match_pass@{k}/mean']:.4f}")
     print(f"Primary F1 mean: {evaluation['summary']['f1/mean']:.4f}")

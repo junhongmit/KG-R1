@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Sequence
 import numpy as np
 
 from baselines.common import compute_pass_at_k, read_jsonl, score_prediction_against_ground_truths
+from baselines.unified_report import write_unified_report
 
 
 def _get_candidate_responses(record: Dict[str, Any]) -> List[str]:
@@ -111,15 +112,19 @@ def write_evaluation_outputs(
     detailed_records: List[Dict[str, Any]],
     summary_path: Path = None,
     detailed_path: Path = None,
+    write_summary: bool = True,
 ) -> None:
-    if summary_path is None:
+    if write_summary and summary_path is None:
         summary_path = input_path.with_name(input_path.stem + "_metrics.json")
     if detailed_path is None:
         detailed_path = input_path.with_name(input_path.stem + "_evaluated.jsonl")
 
-    with open(summary_path, "w", encoding="utf-8") as fout:
-        json.dump(summary, fout, indent=2, ensure_ascii=False)
+    if write_summary:
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(summary_path, "w", encoding="utf-8") as fout:
+            json.dump(summary, fout, indent=2, ensure_ascii=False)
 
+    detailed_path.parent.mkdir(parents=True, exist_ok=True)
     with open(detailed_path, "w", encoding="utf-8") as fout:
         for record in detailed_records:
             fout.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -131,6 +136,9 @@ def main() -> None:
     parser.add_argument("--k_values", nargs="+", type=int, default=[1], help="K values for Pass@K metrics.")
     parser.add_argument("--summary_file", default=None, help="Optional summary JSON output path.")
     parser.add_argument("--detailed_file", default=None, help="Optional evaluated JSONL output path.")
+    parser.add_argument("--baseline", default="llm_baseline", help="Baseline name for unified report.")
+    parser.add_argument("--dataset", default=None, help="Dataset name for unified report.")
+    parser.add_argument("--unified_report_file", default=None, help="Optional unified metrics JSON output path.")
     args = parser.parse_args()
 
     input_path = Path(args.input_file)
@@ -148,6 +156,25 @@ def main() -> None:
     for k in args.k_values:
         print(f"Pass@{k} exact match: {result['summary'][f'exact_match_pass@{k}/mean']:.4f}")
     print(f"Primary F1 mean: {result['summary']['f1/mean']:.4f}")
+    write_unified_report(
+        baseline=args.baseline,
+        dataset=args.dataset or (records[0].get("dataset") if records else "unknown"),
+        output_file=str(input_path),
+        metrics={
+            "hits@1": result["summary"].get("exact_match_pass@1/mean", result["summary"].get("exact_match/mean")),
+            "exact_match": result["summary"].get("exact_match/mean"),
+            "f1": result["summary"].get("f1/mean"),
+            "precision": result["summary"].get("precision/mean"),
+            "recall": result["summary"].get("recall/mean"),
+        },
+        counts={
+            "total_samples": result["summary"].get("num_questions", len(records)),
+            "evaluated_samples": result["summary"].get("num_questions", len(records)),
+            "error": result["summary"].get("num_failed", 0),
+        },
+        records=records,
+        report_file=args.unified_report_file,
+    )
 
 
 if __name__ == "__main__":

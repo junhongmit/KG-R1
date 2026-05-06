@@ -7,7 +7,8 @@
 #   ./eval_qwen_3b_cwq_f1_turn5.sh                            # Use default HF model
 #   ./eval_qwen_3b_cwq_f1_turn5.sh JinyeopSong/KG-R1_test     # Specify HF model
 #   ./eval_qwen_3b_cwq_f1_turn5.sh your-org/your-model cwq    # Specify model and dataset
-#   ./eval_qwen_3b_cwq_f1_turn5.sh "" cwq reward_model.reward_kwargs.use_legacy_entity_f1=true
+#   ./eval_qwen_3b_cwq_f1_turn5.sh your-org/your-model cwq --experiment_postfix=CWQ-hierarchical-retrieval_0
+#   ./eval_qwen_3b_cwq_f1_turn5.sh "" cwq reward_model.reward_kwargs.use_exact_match_binary_for_passk=false
 
 # ==================== CONFIGURATION ====================
 
@@ -34,10 +35,11 @@ MAX_TURNS=5
 
 # ==================== END CONFIGURATION ====================
 
-export CUDA_VISIBLE_DEVICES=4
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}"
 export DATA_DIR='data_kg'
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export HYDRA_FULL_ERROR=1
+export HF_HOME="${HF_HOME:-/u/yzhu/bluebench/.cache/huggingface}"
 
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -56,11 +58,23 @@ rm -rf ~/.cache/torch/triton/
 # Parse command line arguments
 HF_MODEL="${1:-$DEFAULT_HF_MODEL}"
 DATASET_NAME="${2:-$DEFAULT_DATASET}"
-EXTRA_OVERRIDES=("${@:3}")
+CUSTOM_EXPERIMENT_POSTFIX="${EXPERIMENT_POSTFIX:-}"
+EXTRA_OVERRIDES=()
+for arg in "${@:3}"; do
+    if [[ "$arg" == --experiment_postfix=* ]]; then
+        CUSTOM_EXPERIMENT_POSTFIX="${arg#--experiment_postfix=}"
+    else
+        EXTRA_OVERRIDES+=("$arg")
+    fi
+done
 
 # Calculate MAX_K for experiment naming
 MAX_K=$(echo $K_VALUES | tr ' ' '\n' | sort -nr | head -1)
-EXPERIMENT_NAME="${DATASET_NAME}-turn${MAX_TURNS}-eval-k${MAX_K}-n${EVAL_SAMPLES}-hf-$(date +%m%d_%H%M)"
+if [ -n "$CUSTOM_EXPERIMENT_POSTFIX" ]; then
+    EXPERIMENT_NAME="${DATASET_NAME}-turn${MAX_TURNS}-eval-k${MAX_K}-n${EVAL_SAMPLES}-hf-${CUSTOM_EXPERIMENT_POSTFIX}"
+else
+    EXPERIMENT_NAME="${DATASET_NAME}-turn${MAX_TURNS}-eval-k${MAX_K}-n${EVAL_SAMPLES}-hf-$(date +%m%d_%H%M)"
+fi
 
 # Display configuration
 echo "==================== HF MODEL EVALUATION CONFIGURATION ===================="
@@ -71,6 +85,11 @@ echo "K values: $K_VALUES"
 echo "Max turns: $MAX_TURNS"
 echo "Validation batch size: $VAL_BATCH_SIZE"
 echo "Experiment name: $EXPERIMENT_NAME"
+if [ -n "$CUSTOM_EXPERIMENT_POSTFIX" ]; then
+    echo "Experiment postfix: $CUSTOM_EXPERIMENT_POSTFIX"
+fi
+echo "CUDA_VISIBLE_DEVICES: $CUDA_VISIBLE_DEVICES"
+echo "HF cache: $HF_HOME"
 if [ ${#EXTRA_OVERRIDES[@]} -gt 0 ]; then
     echo "Extra Hydra overrides: ${EXTRA_OVERRIDES[*]}"
 fi

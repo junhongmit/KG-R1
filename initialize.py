@@ -145,7 +145,7 @@ def setup_environment():
         with open(env_file, 'w') as f:
             f.write(f"# KG-R1 Inference Environment Configuration\n")
             f.write(f"DATA_DIR={data_kg_dir}\n")
-            f.write(f"HF_HOME={project_root / '.cache' / 'huggingface'}\n")
+            f.write("HF_HOME=/u/yzhu/bluebench/.cache/huggingface\n")
             f.write(f"\n# KG Server Configuration\n")
             f.write(f"KG_SERVER_HOST=0.0.0.0\n")
             f.write(f"KG_SERVER_PORT=8001\n")

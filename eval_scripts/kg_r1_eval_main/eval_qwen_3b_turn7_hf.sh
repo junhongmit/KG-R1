@@ -7,7 +7,7 @@
 #   ./eval_qwen_3b_cwq_f1_turn7.sh                            # Use default HF model
 #   ./eval_qwen_3b_cwq_f1_turn7.sh JinyeopSong/KG-R1_test     # Specify HF model
 #   ./eval_qwen_3b_cwq_f1_turn7.sh your-org/your-model cwq    # Specify model and dataset
-#   ./eval_qwen_3b_cwq_f1_turn7.sh "" cwq reward_model.reward_kwargs.use_legacy_entity_f1=true
+#   ./eval_qwen_3b_cwq_f1_turn7.sh "" cwq reward_model.reward_kwargs.use_exact_match_binary_for_passk=false
 
 # ==================== CONFIGURATION ====================
 
@@ -38,6 +38,7 @@ export CUDA_VISIBLE_DEVICES=0
 export DATA_DIR='data_kg'
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export HYDRA_FULL_ERROR=1
+export HF_HOME="${HF_HOME:-/u/yzhu/bluebench/.cache/huggingface}"
 
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -71,6 +72,7 @@ echo "K values: $K_VALUES"
 echo "Max turns: $MAX_TURNS"
 echo "Validation batch size: $VAL_BATCH_SIZE"
 echo "Experiment name: $EXPERIMENT_NAME"
+echo "HF cache: $HF_HOME"
 if [ ${#EXTRA_OVERRIDES[@]} -gt 0 ]; then
     echo "Extra Hydra overrides: ${EXTRA_OVERRIDES[*]}"
 fi

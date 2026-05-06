@@ -17,13 +17,17 @@ MAX_TURNS=7  # Matches the turn7 checkpoint
 SESSION_TIMESTAMP=$(date +%m%d_%H%M)
 SESSION_DIR="cwq_turn7_all_benchmarks_${SESSION_TIMESTAMP}"
 
+# Resolve project root from this script location.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+
 # Benchmark configurations: dataset_name:port:data_subdir
 BENCHMARKS=(
     "trex:9011:trex_search_augmented_initial_entities"
-    "zero_shot_re:9012:zero_shot_re_search_augmented_initial_entities"
     "grailqa:9000:grailqa_search_augmented_initial_entities"
     "simpleqa:9001:simpleqa_search_augmented_initial_entities"
     "qald10en:9010:qald10en_search_augmented_initial_entities"
+    "multitq:9013:multitq_search_augmented_initial_entities"
 )
 
 export CUDA_VISIBLE_DEVICES=0,1,2,3
@@ -175,7 +179,7 @@ run_benchmark() {
     sleep 2
 
     log_both "🚀 Starting $dataset_name KG server in screen session: $session_name"
-    screen -dmS "$session_name" bash -c "cd /nobackup/users/yeopjin/workspace/KG-R1 && $UNIFIED_SERVER_SCRIPT $dataset_name 4"
+    screen -dmS "$session_name" bash -c "cd '$PROJECT_ROOT' && $UNIFIED_SERVER_SCRIPT $dataset_name 4"
 
     # Wait for server to be ready (2 minutes)
     log_both "⏳ Waiting for $dataset_name server to be ready..."

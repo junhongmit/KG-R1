@@ -1,6 +1,7 @@
 #!/bin/bash
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export DATA_DIR='data_kg'
+export HF_HOME="${HF_HOME:-/u/yzhu/bluebench/.cache/huggingface}"
 # BATCH SIZE OPTIMIZED VERSION - increase VLLM batch capacity for 20-30% speedup
 # Fix expandable segments compatibility with memory pool
 WAND_PROJECT='KG-R1-main'
