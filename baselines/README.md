@@ -18,7 +18,7 @@ Shared features:
 Examples:
 
 ```bash
-cd /orcd/home/002/junhong/LLM/KG-R1
+cd ~/KG-R1
 
 python -m baselines.vanilla \
   --dataset cwq \

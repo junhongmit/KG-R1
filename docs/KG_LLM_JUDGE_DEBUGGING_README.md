@@ -241,7 +241,7 @@ grep -E "(BATCH ANALYSIS|Meta info)" evaluation.log
 ## 📁 File Structure
 
 ```
-/nobackup/users/yeopjin/workspace/RL_KG/
+~/RL_KG/
 ├── verl/trainer/ppo/
 │   ├── ray_evaluator_kg_llm_judge.py          # Main LLM judge evaluator
 │   └── prompt_augmentation_kg.py              # Enhanced prompt engineering
@@ -264,7 +264,7 @@ grep -E "(BATCH ANALYSIS|Meta info)" evaluation.log
 ./eval_scripts/kg_r1_eval_otherbenchmarks/test_multitq_256samples_llm_judge.sh
 
 # Debug evaluation with 2 samples and detailed logging
-/nobackup/users/yeopjin/miniconda3/envs/searcher/bin/python -m verl.trainer.main_eval \
+python -m verl.trainer.main_eval \
     mode=kg-search-llm-judge \
     n_rollout_eval=2 \
     k_values="[1,2]" \
@@ -323,7 +323,7 @@ grep -E "(GPT Response|binary_vector|SUCCESS)" evaluation.log
 ## 🤝 Contributors
 
 - **Primary Developer**: Assistant (Claude Sonnet 4)
-- **Project Lead**: User (yeopjin)
+- **Project Lead**: Local repository maintainer
 - **Framework**: VERL (Versatile Evaluation for Reinforcement Learning)
 - **Base Models**: Qwen2.5-3B-Instruct, GPT-4o-mini
 

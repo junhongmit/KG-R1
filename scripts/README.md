@@ -4,14 +4,20 @@ This directory contains scripts for setting up and processing knowledge graph da
 
 ## Quick Start
 
-To set up data_kg datasets, run the master setup script:
+The CWQ and WebQSP replication flow is:
 
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1
+cd ~/KG-R1
 bash scripts/setup_data_kg.sh
+wget -O freebase-rdf-latest.gz \
+  http://commondatastorage.googleapis.com/freebase-public/rdf/freebase-rdf-latest.gz
+bash scripts/process_entitites_freebase.sh
+python scripts/convert_entities.py
+python scripts/data_process_kg/cwq_search_augmented_initial_entities.py
+python scripts/data_process_kg/webqsp_search_augmented_initial_entities.py
 ```
 
-This interactive script will guide you through setting up various datasets.
+When prompted by `setup_data_kg.sh`, choose the option that downloads all data.
 
 ## Directory Structure
 
@@ -55,12 +61,9 @@ Multi-hop question answering over Freebase knowledge graph.
 
 **Setup:**
 ```bash
-# Option 1: Use master script
 bash scripts/setup_data_kg.sh
-# Then select option 1
-
-# Option 2: Direct processing
-python scripts/data_process_kg/cwq.py
+bash scripts/process_entitites_freebase.sh
+python scripts/convert_entities.py
 python scripts/data_process_kg/cwq_search_augmented_initial_entities.py
 ```
 
@@ -78,12 +81,9 @@ Single-hop and simple multi-hop questions over Freebase.
 
 **Setup:**
 ```bash
-# Option 1: Use master script
 bash scripts/setup_data_kg.sh
-# Then select option 2
-
-# Option 2: Direct processing
-python scripts/data_process_kg/webqsp.py
+bash scripts/process_entitites_freebase.sh
+python scripts/convert_entities.py
 python scripts/data_process_kg/webqsp_search_augmented_initial_entities.py
 ```
 
@@ -127,27 +127,18 @@ bash setup_multitq.sh
 
 ## Freebase Knowledge Graph
 
-All datasets require Freebase KG data (entities, relations).
+CWQ and WebQSP use the Freebase RDF dump plus the entity-processing utilities in this directory.
 
-**Download Freebase KG:**
+**Recommended flow:**
 ```bash
-# Option 1: Use master script
 bash scripts/setup_data_kg.sh
-# Then select option 4
-
-# Option 2: Direct download
-python scripts/download_kg.py --save_path data_kg
+wget -O freebase-rdf-latest.gz \
+  http://commondatastorage.googleapis.com/freebase-public/rdf/freebase-rdf-latest.gz
+bash scripts/process_entitites_freebase.sh
+python scripts/convert_entities.py
 ```
 
-**What it downloads:**
-- Entity mappings (MID → Names)
-- Relation definitions
-- Entity text descriptions
-
-**Output:**
-- `data_kg/entities.txt`
-- `data_kg/entities_text.txt`
-- `data_kg/relations.txt`
+This produces the Freebase entity and relation files used by the augmentation scripts and KG server.
 
 ## Usage in Training
 
@@ -239,8 +230,4 @@ When adding new datasets:
 4. Add option to `setup_data_kg.sh`
 5. Ensure consistent output format (parquet with standard columns)
 
-## Contact
-
-For issues or questions about data setup, please refer to:
-- Main project README: `/home/yeopjin/orcd/pool/workspace/KG-R1/README.md`
-- Dataset-specific READMEs in subdirectories
+For issues or questions about data setup, refer to the main project README and the dataset-specific READMEs in each subdirectory.

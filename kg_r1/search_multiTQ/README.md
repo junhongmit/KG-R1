@@ -38,8 +38,8 @@ kg_r1/search_multiTQ/
 ./scripts/launch_multitq_kg_server.sh
 
 # Or manually
-source /nobackup/users/yeopjin/init_general.sh
-export MULTITQ_DATA_PATH="/nobackup/users/yeopjin/workspace/RL_KG/data_multitq_kg/MultiTQ"
+source "$HOME/init_general.sh"
+export MULTITQ_DATA_PATH="./data_multitq_kg/MultiTQ"
 python -m kg_r1.search_multiTQ.server_multitq
 ```
 
@@ -100,7 +100,7 @@ Supports day/month/year level temporal reasoning:
 
 ```bash
 # Test local KG loading
-source /nobackup/users/yeopjin/init_general.sh
+source "$HOME/init_general.sh"
 python test_temporal_relations.py
 
 # Test server functionality

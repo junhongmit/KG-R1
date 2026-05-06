@@ -7,3 +7,9 @@ eval_results/
 .codex
 results/*
 baselines/results/*
+.env
+*.log
+.RAY_DEBUG/
+verl_checkpoints/
+freebase-rdf-latest.gz
+scripts/freebase_mid_gid_to_names.json

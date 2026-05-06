@@ -7,7 +7,7 @@ without requiring distributed training setup.
 
 Usage:
     python convert_checkpoint_simple.py \
-        /home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
+        ~/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
 """
 
 import argparse

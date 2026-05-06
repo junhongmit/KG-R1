@@ -55,7 +55,7 @@ python kg_r1/search/kg_retrieval_server.py --base_data_path /path/to/your/data_k
 *   `--port`: Port number to run the server on (default: `8000`).
 *   `--base_data_path` (Required): The absolute or relative path to the directory where the RoG dataset (e.g., `data_kg_rog`) is stored. This directory must contain subfolders for each dataset (e.g., `webqsp`, `cwq`), which in turn contain a `subgraphs` folder with the individual JSON subgraph files.
 
-Example: If your subgraphs are in `/nobackup/users/yeopjin/workspace/RL_KG/data_kg_rog/webqsp/subgraphs/`, then `--base_data_path /nobackup/users/yeopjin/workspace/RL_KG/data_kg_rog`.
+Example: If your subgraphs are in `~/RL_KG/data_kg_rog/webqsp/subgraphs/`, then `--base_data_path ~/RL_KG/data_kg_rog`.
 
 Upon successful launch, you should see log messages indicating the server has started, e.g.:
 ```

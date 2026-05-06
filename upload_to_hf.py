@@ -7,8 +7,8 @@ from huggingface_hub import HfApi, upload_folder
 from pathlib import Path
 
 # Configuration
-REPO_ID = "JinyeopSong/KG-R1"
-CHECKPOINT_PATH = "/home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn5-merged-step400"
+REPO_ID = "your-org/KG-R1"
+CHECKPOINT_PATH = "~/RL_KG/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn5-merged-step400"
 TOKEN = os.environ.get("HUGGINGFACE_HUB_TOKEN")
 
 def main():
@@ -18,8 +18,9 @@ def main():
     print()
 
     # Verify checkpoint exists
-    if not Path(CHECKPOINT_PATH).exists():
-        raise FileNotFoundError(f"Checkpoint not found at {CHECKPOINT_PATH}")
+    checkpoint_path = Path(CHECKPOINT_PATH).expanduser()
+    if not checkpoint_path.exists():
+        raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
 
     # Initialize API
     api = HfApi(token=TOKEN)
@@ -32,7 +33,7 @@ def main():
     # This will handle large files with Git LFS automatically
     try:
         result = upload_folder(
-            folder_path=CHECKPOINT_PATH,
+            folder_path=str(checkpoint_path),
             repo_id=REPO_ID,
             repo_type="model",
             token=TOKEN,

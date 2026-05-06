@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# HuggingFace Model Evaluation Script for KG-R1 (Turn 7)
+# HuggingFace Model Evaluation Script for KG-R1 (default: Turn 5)
 # Evaluates models directly from HuggingFace Hub (no local checkpoint needed)
 #
 # Usage:
 #   ./eval_qwen_3b_cwq_f1_turn7.sh                          # Use default HF model
-#   ./eval_qwen_3b_cwq_f1_turn7.sh JinyeopSong/KG-R1_test   # Specify HF model
+#   ./eval_qwen_3b_cwq_f1_turn7.sh your-org/KG-R1-model   # Specify HF model
 #   ./eval_qwen_3b_cwq_f1_turn7.sh your-org/your-model cwq  # Specify model and dataset
 
 # ==================== CONFIGURATION ====================
 
 # Default HuggingFace model to evaluate
-DEFAULT_HF_MODEL="JinyeopSong/KG-R1_test"
+DEFAULT_HF_MODEL="your-org/KG-R1-model"
 
 # Default dataset to evaluate on
 DEFAULT_DATASET="cwq"  # Options: "cwq" or "webqsp"
@@ -29,7 +29,7 @@ WAND_PROJECT='KG-R1-Evaluation-HF'
 VAL_BATCH_SIZE=128
 
 # Max turns for KG search
-MAX_TURNS=7
+MAX_TURNS=5
 
 # ==================== END CONFIGURATION ====================
 
@@ -43,8 +43,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # Initialize environment (optional - only if init script exists)
-if [ -f "/nobackup/users/yeopjin/init_general.sh" ]; then
-    source /nobackup/users/yeopjin/init_general.sh
+if [ -f "$HOME/init_general.sh" ]; then
+    source "$HOME/init_general.sh"
 fi
 
 # Change to project root

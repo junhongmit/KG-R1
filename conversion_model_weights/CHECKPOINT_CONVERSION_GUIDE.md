@@ -5,10 +5,10 @@
 To convert your FSDP sharded checkpoint to a single HuggingFace model:
 
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/RL_KG
+cd ~/RL_KG
 
 bash scripts/convert_checkpoint.sh \
-    /home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
+    ~/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
 ```
 
 This will create: `global_step_150_merged/` with a single HuggingFace model.
@@ -70,10 +70,10 @@ Creates: `my_models/webqsp_merged/`
 
 ### Example 3: Direct Python (with environment setup)
 ```bash
-source /home/yeopjin/orcd/pool/init_general.sh
+source "$HOME/init_general.sh"
 
 python3 scripts/convert_checkpoint_simple.py \
-    /home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150 \
+    ~/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150 \
     --output my_custom_output \
     --dtype bfloat16
 ```
@@ -223,7 +223,7 @@ Should show: `rank_0.pt`, `rank_1.pt`, `rank_2.pt`, `rank_3.pt`
 
 **Solution:** Make sure to source the init script:
 ```bash
-source /home/yeopjin/orcd/pool/init_general.sh
+source "$HOME/init_general.sh"
 python3 scripts/convert_checkpoint_simple.py ...
 ```
 

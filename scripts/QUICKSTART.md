@@ -1,60 +1,44 @@
 # Data KG Setup - Quick Start Guide
 
-## 🚀 Getting Started in 3 Steps
+## 🚀 Getting Started
 
-### Step 1: Run the Setup Script
+### Step 1: Download the datasets
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1
+cd ~/KG-R1
 bash scripts/setup_data_kg.sh
 ```
 
-### Step 2: Select Your Dataset
-Choose from the interactive menu:
-- **Option 1**: ComplexWebQuestions (CWQ) - Multi-hop reasoning
-- **Option 2**: WebQuestionsSP (WebQSP) - Single/simple multi-hop
-- **Option 3**: MultiTQ - Temporal reasoning (includes download!)
-- **Option 4**: Download Freebase KG only
-- **Option 5**: Setup all datasets
+Choose the option that downloads all data in the interactive menu.
 
-### Step 3: Start Training!
+### Step 2: Prepare Freebase entities
 ```bash
-# Example: Train with CWQ
-python -m verl.trainer.main_ppo \
-    mode=kg-search \
-    data.train_files="data_kg/cwq_search_augmented_initial_entities/train.parquet" \
-    data.val_files="data_kg/cwq_search_augmented_initial_entities/test.parquet" \
-    actor_rollout_ref.model.path=Qwen/Qwen2.5-3B-Instruct
+wget -O freebase-rdf-latest.gz \
+  http://commondatastorage.googleapis.com/freebase-public/rdf/freebase-rdf-latest.gz
+bash scripts/process_entitites_freebase.sh
+python scripts/convert_entities.py
 ```
 
----
-
-## 📋 Alternative: Manual Setup
-
-### For MultiTQ (easiest - no pre-download needed)
+### Step 3: Build the augmented CWQ and WebQSP files
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1/scripts/data_multitq_kg
-bash setup_multitq.sh
-```
-
-### For CWQ (requires raw data)
-```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1
-python scripts/data_process_kg/cwq.py
 python scripts/data_process_kg/cwq_search_augmented_initial_entities.py
-```
-
-### For WebQSP (requires raw data)
-```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1
-python scripts/data_process_kg/webqsp.py
 python scripts/data_process_kg/webqsp_search_augmented_initial_entities.py
 ```
 
----
+### Step 4: Launch the KG retrieval server
+```bash
+./kg_retrieval_launch_cwq.sh
+```
+
+### Step 5: Run evaluation
+```bash
+CUDA_VISIBLE_DEVICES=0 bash eval_scripts/kg_r1_eval_main/eval_qwen_3b_turn5_hf.sh \
+  your-org/KG-R1-model \
+  cwq
+```
 
 ## 🎯 Expected Output Locations
 
-After setup, you'll have training data here:
+After setup, you should have:
 
 ```
 KG-R1/
@@ -66,35 +50,23 @@ KG-R1/
 │   ├── webqsp_search_augmented_initial_entities/
 │   │   ├── train.parquet
 │   │   └── test.parquet
-│   │
-│   └── multitq_search_augmented_initial_entities/
-│       ├── train.parquet
-│       ├── dev.parquet
-│       └── test.parquet
 ```
 
 ---
 
 ## ❓ Common Questions
 
-**Q: Which dataset should I start with?**
-A: MultiTQ is easiest (auto-downloads). For more complex reasoning, try CWQ.
-
 **Q: Where do I get CWQ/WebQSP raw data?**
-A: You need to download these separately and place in `data_kg/CWQ/` or `data_kg/webqsp/`
+A: Use `bash scripts/setup_data_kg.sh` and choose the option that downloads all data.
 
 **Q: Do I need Freebase KG data?**
-A: Yes, but the setup scripts handle this automatically.
-
-**Q: Can I test with a small dataset first?**
-A: Yes! Use `--max_samples 100` parameter when running the processing scripts.
+A: Yes. Download `freebase-rdf-latest.gz`, then run `bash scripts/process_entitites_freebase.sh` and `python scripts/convert_entities.py`.
 
 ---
 
 ## 📚 More Information
 
 - **Full Documentation**: [scripts/README.md](README.md)
-- **Patch Summary**: [../SCRIPTS_PATCH_SUMMARY.md](../SCRIPTS_PATCH_SUMMARY.md)
 - **MultiTQ Details**: [data_multitq_kg/README.md](data_multitq_kg/README.md)
 - **WebQSP Details**: [webqsp_kg/README.md](webqsp_kg/README.md)
 
@@ -135,4 +107,4 @@ Once setup is complete, you should see:
 📋 Available files for KG-R1 training
 ```
 
-Now you're ready to train! See the main README for training examples.
+Now you're ready to train or evaluate. See the main README for end-to-end experiment commands.

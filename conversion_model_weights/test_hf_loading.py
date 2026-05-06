@@ -100,11 +100,11 @@ def main():
     # Define checkpoints to test
     checkpoints = [
         (
-            "/home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1-merged-step150",
+            str(Path("~/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1-merged-step150").expanduser()),
             "WebQSP (step 150)"
         ),
         (
-            "/home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn5-merged-step400",
+            str(Path("~/RL_KG/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn5-merged-step400").expanduser()),
             "CWQ (step 400)"
         ),
     ]

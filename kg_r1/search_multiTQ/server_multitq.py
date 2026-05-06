@@ -152,7 +152,7 @@ async def startup_event():
     # Get data path from environment or use default
     data_path = os.environ.get(
         "MULTITQ_DATA_PATH",
-        "/nobackup/users/yeopjin/workspace/RL_KG/data_multitq_kg/MultiTQ"
+        "./data_multitq_kg/MultiTQ"
     )
     
     retriever = KnowledgeGraphRetrieverMultiTQ(data_path)

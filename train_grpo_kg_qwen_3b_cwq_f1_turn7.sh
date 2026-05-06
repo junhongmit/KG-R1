@@ -1,7 +1,7 @@
 #!/bin/bash
 export CUDA_VISIBLE_DEVICES=0,1,2,3
 export DATA_DIR='data_kg'
-export HF_HOME="${HF_HOME:-/u/yzhu/bluebench/.cache/huggingface}"
+export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 # BATCH SIZE OPTIMIZED VERSION - increase VLLM batch capacity for 20-30% speedup
 # Fix expandable segments compatibility with memory pool
 WAND_PROJECT='KG-R1-main'
@@ -12,7 +12,7 @@ export VLLM_USAGE_SOURCE=do-not-track
 rm -rf ~/.cache/torch/triton/
 
 export BASE_MODEL='Qwen/Qwen2.5-3B-Instruct'
-export EXPERIMENT_NAME=cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn7
+export EXPERIMENT_NAME=cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn5
 export RAY_LOG_DIR=".RAY_DEBUG/${EXPERIMENT_NAME}_RAY_DEBUG"
 if [ "${RAY_DEBUG:-0}" -eq 1 ]; then
     mkdir -p "$RAY_LOG_DIR" # Create the directory if it doesn't exist
@@ -84,7 +84,7 @@ PYTHONUNBUFFERED=1 python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.search.enable_during_training=true \
     actor_rollout_ref.rollout.search.enable_during_validation=true \
     actor_rollout_ref.rollout.search.search_url="http://127.0.0.1:8001/retrieve" \
-    actor_rollout_ref.rollout.search.max_turns=7 \
+    actor_rollout_ref.rollout.search.max_turns=5 \
     actor_rollout_ref.rollout.search.topk=3 \
     actor_rollout_ref.rollout.search.timeout=3 \
     actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=130000 \

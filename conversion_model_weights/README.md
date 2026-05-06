@@ -5,7 +5,7 @@ This directory contains tools to convert FSDP sharded checkpoints (4 `.pt` files
 ## Quick Start
 
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/RL_KG
+cd ~/RL_KG
 
 bash conversion_model_weights/convert_checkpoint.sh \
     verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
@@ -47,7 +47,7 @@ bash conversion_model_weights/convert_checkpoint.sh \
 
 ### Direct Python usage
 ```bash
-source /home/yeopjin/orcd/pool/init_general.sh
+source "$HOME/init_general.sh"
 
 python3 conversion_model_weights/convert_checkpoint_simple.py \
     verl_checkpoints/my-model/global_step_150 \

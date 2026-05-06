@@ -22,7 +22,7 @@ Use the simple script that runs on CPU or single GPU:
 
 ```bash
 python scripts/convert_checkpoint_simple.py \
-    /home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
+    ~/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
 ```
 
 This creates: `global_step_150_merged/`
@@ -176,7 +176,7 @@ If you get state_dict key mismatch errors, the simple script may not handle your
 ```bash
 # Convert checkpoint
 python scripts/convert_checkpoint_simple.py \
-    /home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
+    ~/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
 
 # Output:
 # ======================================================================

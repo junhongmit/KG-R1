@@ -1,17 +1,17 @@
 #!/bin/bash
 
-# KG-R1 Main Evaluation Script for CWQ with Turn 7
+# KG-R1 Main Evaluation Script for CWQ with Turn 5
 # Usage:
-#   ./eval_qwen_3b_cwq_f1_turn7.sh                    # Use all defaults
-#   ./eval_qwen_3b_cwq_f1_turn7.sh /path/to/ckpt      # Specify checkpoint
-#   ./eval_qwen_3b_cwq_f1_turn7.sh /path/to/ckpt DATASET  # Specify checkpoint and dataset
-#   ./eval_qwen_3b_cwq_f1_turn7.sh /path/to/ckpt DATASET 300  # Specify everything
+#   ./eval_qwen_3b_turn5_local.sh                    # Use all defaults
+#   ./eval_qwen_3b_turn5_local.sh /path/to/ckpt      # Specify checkpoint
+#   ./eval_qwen_3b_turn5_local.sh /path/to/ckpt DATASET
+#   ./eval_qwen_3b_turn5_local.sh /path/to/ckpt DATASET 300
 
 # ==================== CONFIGURATION ====================
 # You can modify these variables or override them via command line arguments
 
 # Default checkpoint to evaluate (set your checkpoint path here)
-DEFAULT_CHECKPOINT="/nobackup/users/yeopjin/workspace/KG-R1/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn7"
+DEFAULT_CHECKPOINT="$HOME/KG-R1/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn5"
 
 # Default dataset to evaluate on
 DEFAULT_DATASET="cwq"  # Options: "cwq" or "webqsp"
@@ -35,7 +35,7 @@ BASE_MODEL='Qwen/Qwen2.5-3B-Instruct'
 VAL_BATCH_SIZE=128
 
 # Max turns for KG reasoning
-MAX_TURNS=7
+MAX_TURNS=5
 
 # ==================== END CONFIGURATION ====================
 

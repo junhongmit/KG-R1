@@ -52,13 +52,13 @@ people.person: nationality, profession, spouse_s
 ### Launch Scripts (Easiest)
 Edit the format in your launch script:
 
-**WebQSP**: `/nobackup/users/yeopjin/workspace/RL_KG/kg_retrieval_launch_webqsp.sh`
+**WebQSP**: `~/RL_KG/kg_retrieval_launch_webqsp.sh`
 ```bash
 # Change this line to your preferred format:
 relation_format="full_indent"  # Options: "flat", "full_indent", "mixed", "compact"
 ```
 
-**CWQ**: `/nobackup/users/yeopjin/workspace/RL_KG/kg_retrieval_launch_cwq.sh`
+**CWQ**: `~/RL_KG/kg_retrieval_launch_cwq.sh`
 ```bash
 # Change this line to your preferred format:
 relation_format="full_indent"  # Options: "flat", "full_indent", "mixed", "compact"

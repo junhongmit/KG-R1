@@ -4,16 +4,16 @@
 # Evaluates models directly from HuggingFace Hub (no local checkpoint needed)
 #
 # Usage:
-#   ./eval_qwen_3b_cwq_f1_turn5.sh                            # Use default HF model
-#   ./eval_qwen_3b_cwq_f1_turn5.sh JinyeopSong/KG-R1_test     # Specify HF model
-#   ./eval_qwen_3b_cwq_f1_turn5.sh your-org/your-model cwq    # Specify model and dataset
-#   ./eval_qwen_3b_cwq_f1_turn5.sh your-org/your-model cwq --experiment_postfix=CWQ-hierarchical-retrieval_0
-#   ./eval_qwen_3b_cwq_f1_turn5.sh "" cwq reward_model.reward_kwargs.use_exact_match_binary_for_passk=false
+#   ./eval_qwen_3b_f1_turn5.sh                            # Use default HF model
+#   ./eval_qwen_3b_f1_turn5.sh your-org/KG-R1-model      # Specify HF model
+#   ./eval_qwen_3b_f1_turn5.sh your-org/your-model cwq    # Specify model and dataset
+#   ./eval_qwen_3b_f1_turn5.sh your-org/your-model cwq --experiment_postfix=CWQ-hierarchical-retrieval_0
+#   ./eval_qwen_3b_f1_turn5.sh "" cwq reward_model.reward_kwargs.use_exact_match_binary_for_passk=false
 
 # ==================== CONFIGURATION ====================
 
 # Default HuggingFace model to evaluate
-DEFAULT_HF_MODEL="JinyeopSong/KG-R1_test"
+DEFAULT_HF_MODEL="your-org/KG-R1-model"
 
 # Default dataset to evaluate on
 DEFAULT_DATASET="cwq"  # Options: "cwq" or "webqsp"
@@ -39,15 +39,15 @@ export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-1}"
 export DATA_DIR='data_kg'
 export VLLM_ATTENTION_BACKEND=XFORMERS
 export HYDRA_FULL_ERROR=1
-export HF_HOME="${HF_HOME:-/u/yzhu/bluebench/.cache/huggingface}"
+export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 
 # Get script directory and project root
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 # Initialize environment (optional - only if init script exists)
-# if [ -f "/nobackup/users/yeopjin/init_general.sh" ]; then
-#     source /nobackup/users/yeopjin/init_general.sh
+# if [ -f "$HOME/init_general.sh" ]; then
+#     source "$HOME/init_general.sh"
 # fi
 
 # Change to project root

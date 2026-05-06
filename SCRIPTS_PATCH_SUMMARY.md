@@ -5,8 +5,8 @@
 Successfully patched data_kg setup scripts from [RL_KG](../RL_KG) to [KG-R1](../KG-R1). This adds comprehensive dataset processing capabilities for knowledge graph-based training.
 
 **Date:** 2025-11-19
-**Source:** `/home/yeopjin/orcd/pool/workspace/RL_KG/scripts`
-**Target:** `/home/yeopjin/orcd/pool/workspace/KG-R1/scripts`
+**Source:** `~/RL_KG/scripts`
+**Target:** `~/KG-R1/scripts`
 
 ## What Was Added
 
@@ -57,7 +57,7 @@ All hardcoded paths from RL_KG have been updated to be relative to KG-R1:
 
 **Before (RL_KG):**
 ```python
-default='/nobackup/users/yeopjin/workspace/RL_KG/data_kg/CWQ/train_simple.json'
+default='~/RL_KG/data_kg/CWQ/train_simple.json'
 ```
 
 **After (KG-R1):**
@@ -88,7 +88,7 @@ Created interactive setup script: [scripts/setup_data_kg.sh](scripts/setup_data_
 
 **Usage:**
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1
+cd ~/KG-R1
 bash scripts/setup_data_kg.sh
 ```
 
@@ -162,21 +162,21 @@ Created comprehensive documentation:
 
 ### Quick Setup (Recommended)
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1
+cd ~/KG-R1
 bash scripts/setup_data_kg.sh
 # Select option from interactive menu
 ```
 
 ### Manual Setup - CWQ
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1
+cd ~/KG-R1
 python scripts/data_process_kg/cwq.py
 python scripts/data_process_kg/cwq_search_augmented_initial_entities.py
 ```
 
 ### Manual Setup - MultiTQ
 ```bash
-cd /home/yeopjin/orcd/pool/workspace/KG-R1/scripts/data_multitq_kg
+cd ~/KG-R1/scripts/data_multitq_kg
 bash setup_multitq.sh
 ```
 
@@ -253,21 +253,21 @@ Run these commands to verify the setup:
 
 ```bash
 # Check scripts directory structure
-tree -L 2 /home/yeopjin/orcd/pool/workspace/KG-R1/scripts/
+tree -L 2 ~/KG-R1/scripts/
 
 # Verify executable permissions
-ls -la /home/yeopjin/orcd/pool/workspace/KG-R1/scripts/*.sh
-ls -la /home/yeopjin/orcd/pool/workspace/KG-R1/scripts/data_multitq_kg/*.sh
+ls -la ~/KG-R1/scripts/*.sh
+ls -la ~/KG-R1/scripts/data_multitq_kg/*.sh
 
 # Check for hardcoded paths (should return minimal results)
-grep -r "/nobackup/users/yeopjin/workspace/RL_KG" /home/yeopjin/orcd/pool/workspace/KG-R1/scripts/ || echo "No hardcoded RL_KG paths found!"
+grep -r "~/RL_KG" ~/KG-R1/scripts/ || echo "No hardcoded RL_KG paths found!"
 ```
 
 ## Next Steps
 
 1. **Try the setup script:**
    ```bash
-   cd /home/yeopjin/orcd/pool/workspace/KG-R1
+   cd ~/KG-R1
    bash scripts/setup_data_kg.sh
    ```
 
@@ -294,7 +294,7 @@ grep -r "/nobackup/users/yeopjin/workspace/RL_KG" /home/yeopjin/orcd/pool/worksp
 
 ## References
 
-- Source repository: `/home/yeopjin/orcd/pool/workspace/RL_KG`
-- Target repository: `/home/yeopjin/orcd/pool/workspace/KG-R1`
+- Source repository: `~/RL_KG`
+- Target repository: `~/KG-R1`
 - Main documentation: [scripts/README.md](scripts/README.md)
-- RL_KG scripts: `/home/yeopjin/orcd/pool/workspace/RL_KG/scripts`
+- RL_KG scripts: `~/RL_KG/scripts`

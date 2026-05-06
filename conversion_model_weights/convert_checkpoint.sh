@@ -6,10 +6,12 @@
 #
 # Example:
 #   bash conversion_model_weights/convert_checkpoint.sh \
-#       /home/yeopjin/orcd/pool/workspace/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
+#       ~/RL_KG/verl_checkpoints/webqsp-KG-r1-grpo-qwen2.5-3b-it_Aug11_f1_turn7_rep1/global_step_150
 
 # Source the initialization script
-source /home/yeopjin/orcd/pool/init_general.sh
+if [ -f "$HOME/init_general.sh" ]; then
+    source "$HOME/init_general.sh"
+fi
 
 # Get script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

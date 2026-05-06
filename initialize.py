@@ -59,7 +59,7 @@ def download_kg_data(dataset_id: str, output_dir: Path, force: bool = False):
     Download KG data from HuggingFace
 
     Args:
-        dataset_id: HuggingFace dataset ID (e.g., 'JinyeopSong/KG-R1-data')
+        dataset_id: HuggingFace dataset ID (e.g., 'your-org/KG-R1-data')
         output_dir: Output directory for data
         force: Force re-download even if data exists
     """
@@ -145,7 +145,7 @@ def setup_environment():
         with open(env_file, 'w') as f:
             f.write(f"# KG-R1 Inference Environment Configuration\n")
             f.write(f"DATA_DIR={data_kg_dir}\n")
-            f.write("HF_HOME=/u/yzhu/bluebench/.cache/huggingface\n")
+            f.write("HF_HOME=~/.cache/huggingface\n")
             f.write(f"\n# KG Server Configuration\n")
             f.write(f"KG_SERVER_HOST=0.0.0.0\n")
             f.write(f"KG_SERVER_PORT=8001\n")
@@ -174,8 +174,8 @@ def main():
         sys.exit(1)
 
     # Step 2: Download data (MOCK - replace with actual HF dataset ID)
-    # TODO: Replace 'JinyeopSong/KG-R1-data' with actual dataset ID when available
-    dataset_id = "JinyeopSong/KG-R1-data"  # MOCK - Update this!
+    # TODO: Replace 'your-org/KG-R1-data' with actual dataset ID when available
+    dataset_id = "your-org/KG-R1-data"  # MOCK - Update this!
 
     print_status("\n⚠️  MOCK MODE: Using placeholder dataset ID", "warning")
     print_status(f"Current dataset ID: {dataset_id}", "info")
@@ -228,7 +228,7 @@ def main():
         print("   bash eval_qwen_3b_cwq_f1_turn5.sh")
     else:
         print("\n3. Set up data for full evaluation:")
-        print("   ln -s /path/to/RL_KG/data_kg ./data_kg")
+        print("   ln -s /path/to/data_kg ./data_kg")
         print("   OR update dataset_id in initialize.py and run again")
 
     print("\n📚 Documentation:")

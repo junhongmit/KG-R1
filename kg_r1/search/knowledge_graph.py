@@ -183,7 +183,7 @@ class KnowledgeGraph:
 
 def main():
     """Test function to demonstrate KnowledgeGraph functionality"""
-    data_path = "/nobackup/users/yeopjin/workspace/RL_KG/data_kg/webqsp"
+    data_path = "/path/to/data_kg/webqsp"
     
     print("=" * 60)
     print("Testing KnowledgeGraph with Sequential Loading")

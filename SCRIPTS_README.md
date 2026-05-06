@@ -329,7 +329,7 @@ bash eval_scripts/kg_r1_eval_otherbenchmarks/run_all_benchmarks_cwq_turn7.sh
 
 ## 📚 References
 
-- **Original implementation**: `/nobackup/users/yeopjin/workspace/RL_KG`
+- **Original implementation**: `~/RL_KG`
 - **Paper**: KG-R1: Efficient and Transferable Agentic KG-RAG via RL (ICLR 2026 submission)
 - **Base framework**: veRL (https://github.com/volcengine/verl)
 - **Related work**: Search-R1 (https://github.com/PeterGriffinJin/Search-R1)

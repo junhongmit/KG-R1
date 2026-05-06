@@ -1,21 +1,21 @@
 #!/bin/bash
 
 # Unified script to run all 5 benchmark tests for KG-R1 model evaluation
-# Optimized for cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn7 checkpoint
-# CWQ Turn7 version
+# Optimized for cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn5 checkpoint
+# CWQ Turn5 version
 
 # ==================== CONFIGURATION ====================
-DEFAULT_CHECKPOINT="/nobackup/users/yeopjin/workspace/KG-R1/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn7"
+DEFAULT_CHECKPOINT="$PROJECT_ROOT/verl_checkpoints/cwq-KG-r1-grpo-qwen2.5-3b-it_f1_turn5"
 DEFAULT_STEP=""
 EVAL_SAMPLES=0  # 0 = evaluate all samples
 K_VALUES="1 2 3 4"
 BASE_MODEL='Qwen/Qwen2.5-3B-Instruct'
 VAL_BATCH_SIZE=128
-MAX_TURNS=7  # Matches the turn7 checkpoint
+MAX_TURNS=5  # Matches the turn5 checkpoint
 
 # Session timestamp for unique experiment naming
 SESSION_TIMESTAMP=$(date +%m%d_%H%M)
-SESSION_DIR="cwq_turn7_all_benchmarks_${SESSION_TIMESTAMP}"
+SESSION_DIR="cwq_turn5_all_benchmarks_${SESSION_TIMESTAMP}"
 
 # Resolve project root from this script location.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -52,7 +52,7 @@ log_session() {
 }
 
 log_both "=================================================================="
-log_both "🚀 RUNNING ALL BENCHMARKS FOR KG-R1 CWQ TURN7 MODEL"
+log_both "🚀 RUNNING ALL BENCHMARKS FOR KG-R1 CWQ TURN5 MODEL"
 log_both "=================================================================="
 
 # Parse command line arguments
@@ -91,7 +91,7 @@ SUMMARY_LOG="$MAIN_OUTPUT_DIR/session_summary.log"
 # Initialize session log with header
 cat > "$SESSION_LOG" << EOF
 ================================================================
-KG-R1 CWQ TURN7 BENCHMARKS - COMPLETE SESSION LOG
+KG-R1 CWQ TURN5 BENCHMARKS - COMPLETE SESSION LOG
 ================================================================
 Started: $(date)
 Checkpoint: $CHECKPOINT_PATH
@@ -141,11 +141,11 @@ run_benchmark() {
     local benchmark_num="$4"
     local total_benchmarks="$5"
 
-    local experiment_name="${dataset_name}_cwq_turn7_${SESSION_TIMESTAMP}"
+    local experiment_name="${dataset_name}_cwq_turn5_${SESSION_TIMESTAMP}"
     local session_name="${dataset_name}_kg_server"
     local test_file="$DATA_DIR/$data_subdir/test.parquet"
     local search_url="http://127.0.0.1:$port/retrieve"
-    local wand_project="KG-R1-Test-${dataset_name^}-CWQ-Turn7"
+    local wand_project="KG-R1-Test-${dataset_name^}-CWQ-Turn5"
 
     # Set batch size: 64 for GrailQA, 128 for others
     local batch_size=$VAL_BATCH_SIZE

@@ -2,7 +2,7 @@
 """
 Test script to verify that models on HuggingFace Hub load correctly.
 
-Tests loading from: JinyeopSong/KG-R1_test
+Tests loading from: your-org/KG-R1-model
 """
 
 import sys
@@ -99,7 +99,7 @@ def main():
     """Run tests on HuggingFace Hub models."""
 
     # Model repository to test
-    repo_id = "JinyeopSong/KG-R1_test"
+    repo_id = "your-org/KG-R1-model"
     test_name = "KG-R1 Test Model"
 
     # Allow testing custom repo via command line

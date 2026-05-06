@@ -16,7 +16,7 @@ def test_local_kg():
     print("Testing MultiTQ Knowledge Graph Loading")
     print("=" * 60)
     
-    data_path = "/nobackup/users/yeopjin/workspace/RL_KG/data_multitq_kg/MultiTQ"
+    data_path = "./data_multitq_kg/MultiTQ"
     
     # Test each split
     for split in ["train", "valid", "test"]:
@@ -117,8 +117,9 @@ def test_server_api():
                     lines = content.split('\n')[:5]
                     for line in lines:
                         print(f"   {line}")
-                    if len(content.split('\n')) > 5:
-                        print(f"   ... ({len(content.split('\n'))} total lines)")
+                    total_lines = len(content.split('\n'))
+                    if total_lines > 5:
+                        print(f"   ... ({total_lines} total lines)")
                 else:
                     print(f"   ❌ Error: {data['choices'][0]['message']['content']}")
             else:
