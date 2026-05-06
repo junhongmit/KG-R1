@@ -62,13 +62,12 @@ echo "Available datasets to set up:"
 echo ""
 echo "1) ComplexWebQuestions (CWQ)"
 echo "2) WebQuestionsSP (WebQSP)"
-echo "3) MultiTQ (Temporal Multi-hop QA)"
-echo "4) Download Freebase KG data (required for all datasets)"
-echo "5) Setup all datasets"
-echo "6) Exit"
+echo "3) Download Freebase KG data (required for all datasets)"
+echo "4) Setup all datasets"
+echo "5) Exit"
 echo ""
 
-read -p "Select an option (1-6): " choice
+read -p "Select an option (1-5): " choice
 
 case $choice in
     1)
@@ -125,18 +124,6 @@ case $choice in
         ;;
 
     3)
-        print_section "Setting up MultiTQ (Temporal Multi-hop QA)"
-
-        echo "Running MultiTQ setup script..."
-        cd "$PROJECT_ROOT/scripts/data_multitq_kg"
-        bash setup_multitq.sh
-
-        echo ""
-        echo "✅ MultiTQ dataset setup complete!"
-        echo "Training data available at: data_kg/multitq_search_augmented_initial_entities/"
-        ;;
-
-    4)
         print_section "Downloading Freebase KG Data"
 
         echo "This will download and process Freebase knowledge graph data."
@@ -154,7 +141,7 @@ case $choice in
         fi
         ;;
 
-    5)
+    4)
         print_section "Setting up ALL datasets"
 
         echo "This will set up all available datasets."
@@ -189,13 +176,6 @@ case $choice in
                 python3 scripts/data_process_kg/webqsp_search_augmented_initial_entities.py
             fi
 
-            # Setup MultiTQ
-            echo ""
-            print_section "Processing MultiTQ"
-            cd "$PROJECT_ROOT/scripts/data_multitq_kg"
-            bash setup_multitq.sh
-            cd "$PROJECT_ROOT"
-
             echo ""
             print_section "Setup Complete!"
             echo "All datasets have been processed and are ready for training."
@@ -204,7 +184,7 @@ case $choice in
         fi
         ;;
 
-    6)
+    5)
         echo "Exiting..."
         exit 0
         ;;
@@ -223,7 +203,6 @@ echo ""
 datasets=(
     "data_kg/cwq_search_augmented_initial_entities"
     "data_kg/webqsp_search_augmented_initial_entities"
-    "data_kg/multitq_search_augmented_initial_entities"
 )
 
 for dataset in "${datasets[@]}"; do

@@ -18,7 +18,7 @@ Combines KG generation framework (ray_evaluator_kg.py) with LLM judge evaluation
 This evaluator:
 - Uses KG search and multi-turn reasoning for generation 
 - Replaces reward-based scoring with parallel LLM-as-judge evaluation
-- Supports MultiTQ and other temporal KG datasets
+- Supports temporal and standard KG datasets
 """
 
 import os
@@ -298,7 +298,7 @@ class RayKGLLMJudgeEvaluator(RayKGEvaluator):
             else:
                 test_output_gen_batch_padded = self.async_rollout_manager.generate_sequences(test_gen_batch_padded)
         else:
-            # KG search generation (main path for MultiTQ)
+            # KG search generation
             print(f"[KG-LLM-JUDGE] Starting KG search generation for {len(expanded_gen_batch)} samples...")
             first_input_ids = test_gen_batch_padded.batch['input_ids'][:, -self.generation_manager.config.max_start_length:].clone().long()
             test_output_gen_batch_padded = self.generation_manager.run_llm_loop(
@@ -598,7 +598,7 @@ class RayKGLLMJudgeEvaluator(RayKGEvaluator):
                             if isinstance(reward_info, dict) and 'ground_truth' in reward_info:
                                 gt = reward_info['ground_truth']
                                 print(f"[KG-LLM-JUDGE WORKFLOW] Ground truth type: {type(gt)}, content: {gt}")
-                                # Handle MultiTQ format: {'target_kb_id': [...], 'target_text': [...]}
+                                # Handle structured temporal-KG format: {'target_kb_id': [...], 'target_text': [...]}
                                 if isinstance(gt, dict) and 'target_text' in gt:
                                     ground_truth_entities = gt['target_text']
                                 elif isinstance(gt, str):
@@ -879,16 +879,16 @@ class RayKGLLMJudgeEvaluator(RayKGEvaluator):
             print(f"[KG-LLM-JUDGE WARNING] Failed to extract answer: {e}")
             return ""
     
-    def _is_multitq_evaluation(self, question: str, ground_truth_entities: List[str]) -> bool:
+    def _is_temporal_evaluation(self, question: str, ground_truth_entities: List[str]) -> bool:
         """
-        Detect if this is MultiTQ evaluation based on question or ground truth format.
+        Detect whether temporal answer matching should be used.
         
         Args:
             question: The question text
             ground_truth_entities: List of ground truth entities
             
         Returns:
-            True if this appears to be MultiTQ evaluation
+            True if this appears to be a temporal KG evaluation
         """
         # Check for temporal patterns in ground truth entities
         temporal_patterns = [
@@ -904,8 +904,8 @@ class RayKGLLMJudgeEvaluator(RayKGEvaluator):
                     if re.match(pattern, entity.strip()):
                         return True
         
-        # Check for MultiTQ-specific question patterns
-        multitq_indicators = [
+        # Check for temporal question patterns
+        temporal_indicators = [
             'when did', 'what year', 'what month', 'what day',
             'during which', 'in which year', 'in which month',
             'before', 'after', 'between', 'from', 'until',
@@ -913,7 +913,7 @@ class RayKGLLMJudgeEvaluator(RayKGEvaluator):
         ]
         
         question_lower = question.lower()
-        for indicator in multitq_indicators:
+        for indicator in temporal_indicators:
             if indicator in question_lower:
                 return True
                 
@@ -921,7 +921,7 @@ class RayKGLLMJudgeEvaluator(RayKGEvaluator):
     
     def create_llm_judge_prompt(self, question: str, predicted_answer: str, ground_truth_entities: List[str]) -> str:
         """
-        Create evaluation prompt for LLM-as-Judge adapted for KG/MultiTQ evaluation.
+        Create an LLM-as-Judge prompt adapted for KG evaluation.
         
         Args:
             question: The original question
@@ -937,22 +937,22 @@ class RayKGLLMJudgeEvaluator(RayKGEvaluator):
         num_entities = len(ground_truth_entities)
         vector_example = "[" + ",".join(["0"] * num_entities) + "]"
         
-        # Use MultiTQ-specific prompt if detected
-        if self._is_multitq_evaluation(question, ground_truth_entities):
-            return self._create_multitq_judge_prompt(question, predicted_answer, ground_truth_entities, entities_str, num_entities, vector_example)
+        # Use a temporal prompt when the question/answers indicate time-sensitive matching.
+        if self._is_temporal_evaluation(question, ground_truth_entities):
+            return self._create_temporal_judge_prompt(question, predicted_answer, ground_truth_entities, entities_str, num_entities, vector_example)
         else:
             return self._create_general_judge_prompt(question, predicted_answer, ground_truth_entities, entities_str, num_entities, vector_example)
     
-    def _create_multitq_judge_prompt(self, question: str, predicted_answer: str, ground_truth_entities: List[str], entities_str: str, num_entities: int, vector_example: str) -> str:
+    def _create_temporal_judge_prompt(self, question: str, predicted_answer: str, ground_truth_entities: List[str], entities_str: str, num_entities: int, vector_example: str) -> str:
         """
-        Create MultiTQ-specific LLM judge prompt with temporal format handling.
+        Create an LLM judge prompt for temporal KG answers.
         """
         prompt = f"""For each of the {num_entities} gold temporal entities in order, does the prediction refer to the same time period with appropriate temporal precision?
 
 Respond with EXACTLY {num_entities} numbers in format {vector_example}.
 1 = correct temporal match with adequate precision, 0 = wrong time period or inadequate precision.
 
-MultiTQ Temporal Matching Rules:
+Temporal Matching Rules:
 - Exact format matches: 1 (e.g., "2018-02" = "February 2018" = "Feb 2018")
 - Year equivalence: 1 (e.g., "2019" = "year 2019" = "in 2019")  
 - Date equivalence: 1 (e.g., "2021-05-15" = "May 15, 2021")
@@ -983,7 +983,7 @@ binary vector:"""
     
     def _create_general_judge_prompt(self, question: str, predicted_answer: str, ground_truth_entities: List[str], entities_str: str, num_entities: int, vector_example: str) -> str:
         """
-        Create general KG evaluation prompt for non-MultiTQ datasets.
+        Create general KG evaluation prompt for non-temporal datasets.
         """
         prompt = f"""For each of the {num_entities} gold entities in order, does the prediction refer to the same real-world entity with the same level of specificity? 
 

@@ -534,7 +534,7 @@ def kg_llm_judge_evaluation(config):
     This mode combines:
     - KG search and multi-turn reasoning from kg_evaluation
     - LLM judge evaluation from vanilla_evaluation
-    - Designed for MultiTQ and other temporal KG datasets
+    - Designed for temporal and standard KG datasets
     """
     print("Starting KG-LLM-Judge evaluation mode")
     
@@ -620,9 +620,7 @@ def kg_llm_judge_evaluation(config):
             data_files = data_files[0] if data_files else ''
         
         dataset_name = 'test'  # Default
-        if 'multitq' in str(data_files).lower():
-            dataset_name = 'multitq'
-        elif 'cwq' in str(data_files).lower():
+        if 'cwq' in str(data_files).lower():
             dataset_name = 'cwq'
         elif 'webqsp' in str(data_files).lower():
             dataset_name = 'webqsp'

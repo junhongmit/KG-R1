@@ -35,15 +35,6 @@ scripts/
 │   ├── webqsp.py                       # Process WebQuestionsSP
 │   └── webqsp_search_augmented_initial_entities.py
 │
-├── data_multitq_kg/                    # MultiTQ temporal QA dataset
-│   ├── setup_multitq.sh                # Complete MultiTQ setup
-│   ├── download_multitq.py             # Download MultiTQ data
-│   ├── process_multitq.py              # Process for KG-R1
-│   ├── multitq_search_augmented_initial_entities.py
-│   ├── filter_multitq_2k.py
-│   ├── integration_example.sh
-│   └── README.md
-│
 └── webqsp_kg/                          # WebQSP specific scripts
     ├── setup_webqsp_kg.sh
     ├── data_process.sh
@@ -95,36 +86,6 @@ python scripts/data_process_kg/webqsp_search_augmented_initial_entities.py
 - `data_kg/webqsp_search_augmented_initial_entities/train.parquet`
 - `data_kg/webqsp_search_augmented_initial_entities/test.parquet`
 
-### 3. MultiTQ (Temporal Multi-hop QA)
-
-Multi-hop temporal reasoning questions with time constraints.
-
-**Setup:**
-```bash
-# Option 1: Use master script
-bash scripts/setup_data_kg.sh
-# Then select option 3
-
-# Option 2: Run MultiTQ setup directly
-cd scripts/data_multitq_kg
-bash setup_multitq.sh
-```
-
-**What it does:**
-1. Downloads MultiTQ dataset from GitHub
-2. Processes for KG-R1 compatibility
-3. Creates search-augmented training data with initial entities
-
-**Output:**
-- `data_multitq_kg/MultiTQ/` - Raw data
-- `data_kg/multitq/` - Processed data
-- `data_kg/multitq_search_augmented_initial_entities/` - Training data
-
-**Features:**
-- Temporal reasoning with multi-granularity (year, month, day)
-- Time-constrained multi-hop questions
-- Temporal fact integration
-
 ## Freebase Knowledge Graph
 
 CWQ and WebQSP use the Freebase RDF dump plus the entity-processing utilities in this directory.
@@ -150,17 +111,6 @@ python -m verl.trainer.main_ppo \
     mode=kg-search \
     data.train_files="data_kg/cwq_search_augmented_initial_entities/train.parquet" \
     data.val_files="data_kg/cwq_search_augmented_initial_entities/test.parquet" \
-    actor_rollout_ref.model.path=Qwen/Qwen2.5-3B-Instruct
-```
-
-### MultiTQ Training Example
-```bash
-python -m verl.trainer.main_ppo \
-    mode=kg-search \
-    data.train_files="data_kg/multitq_search_augmented_initial_entities/train.parquet" \
-    data.val_files="data_kg/multitq_search_augmented_initial_entities/test.parquet" \
-    data.prompt_augmentation.enable=true \
-    data.prompt_augmentation.guideline_level=temporal_detailed \
     actor_rollout_ref.model.path=Qwen/Qwen2.5-3B-Instruct
 ```
 
@@ -213,10 +163,6 @@ If you get "dataset not found" errors:
 - **`webqsp.py`**: Processes WebQSP to parquet format
 - **`*_search_augmented_initial_entities.py`**: Adds search hints and initial entities to prompts
 
-### MultiTQ Scripts
-
-See [data_multitq_kg/README.md](data_multitq_kg/README.md) for detailed MultiTQ setup instructions.
-
 ### WebQSP KG Scripts
 
 See [webqsp_kg/README.md](webqsp_kg/README.md) for WebQSP-specific training scripts.
@@ -224,7 +170,7 @@ See [webqsp_kg/README.md](webqsp_kg/README.md) for WebQSP-specific training scri
 ## Contributing
 
 When adding new datasets:
-1. Create a new subdirectory (e.g., `data_newdataset_kg/`)
+1. Create a new subdirectory under `scripts/`
 2. Provide processing scripts and setup.sh
 3. Update this README with setup instructions
 4. Add option to `setup_data_kg.sh`

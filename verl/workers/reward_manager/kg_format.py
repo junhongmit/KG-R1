@@ -24,10 +24,10 @@ from verl.utils.reward_score import qa_em_format_kg
 
 def _select_kg_rm_score_fn(data_source):
     """Select the appropriate KG reward scoring function based on data source."""
-    if data_source in ['webqsp_kg', 'cwq_kg', 'kgR1_webqsp', 'kgR1_cwq', 'kgR1_multitq']:
+    if data_source in ['webqsp_kg', 'cwq_kg', 'kgR1_webqsp', 'kgR1_cwq']:
         return qa_em_format_kg.compute_score_em_kg_refactored
     else:
-        raise NotImplementedError(f"Data source '{data_source}' not supported for KG format reward manager. Supported: webqsp_kg, cwq_kg, kgR1_webqsp, kgR1_cwq, kgR1_multitq")
+        raise NotImplementedError(f"Data source '{data_source}' not supported for KG format reward manager. Supported: webqsp_kg, cwq_kg, kgR1_webqsp, kgR1_cwq")
 
 
 class KGFormatRewardManager:
@@ -219,9 +219,7 @@ sample_interaction_history: {sample_interaction_history}
             # Only show first few examples to avoid log spam
             if i < 3:  # Show first 3 examples per batch
                 dataset_type = 'UNKNOWN'
-                if 'multitq' in data_source.lower():
-                    dataset_type = 'MultiTQ'
-                elif 'cwq' in data_source.lower():
+                if 'cwq' in data_source.lower():
                     dataset_type = 'CWQ'
                 elif 'webqsp' in data_source.lower():
                     dataset_type = 'WebQSP'

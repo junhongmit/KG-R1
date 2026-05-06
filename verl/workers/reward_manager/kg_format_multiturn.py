@@ -1013,9 +1013,7 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         # Determine dataset type from data_source
         extra_info = interaction_history.get('extra_info', {})
         
-        if 'multitq' in data_source:
-            dataset_type = 'MultiTQ'
-        elif 'cwq' in data_source:
+        if 'cwq' in data_source:
             dataset_type = 'CWQ'
         elif 'webqsp' in data_source:
             dataset_type = 'WebQSP'
@@ -1025,13 +1023,8 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
             dataset_type = 'T-REx'
         elif 'zero_shot_re' in data_source:
             dataset_type = 'ZeroShotRE'
-        # Fallback: check extra_info if data_source didn't match
-        elif extra_info and 'dataset_name' in extra_info and extra_info['dataset_name'] == 'multitq':
-            dataset_type = 'MultiTQ'
-            data_source = 'multitq'  # Update for consistency
-        
         # Calculate EM score for display (no logging)
-        # Pass interaction_history to enable MultiTQ temporal granularity handling
+        # Pass interaction_history to enable dataset-aware normalization
         em_match_result = self._check_exact_match(assistant_response, ground_truth_answers, interaction_history=interaction_history, dataset_name=data_source)
         em_score = 1.0 if em_match_result else 0.0
         
@@ -1237,7 +1230,7 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
             return False
         
         # Use the existing em_check_kg function for consistency
-        # Pass interaction_history and dataset_name to enable MultiTQ temporal handling
+        # Pass interaction_history and dataset_name to enable temporal answer handling
         return em_check_kg(predicted_answer, ground_truth_answers, dataset_name=dataset_name, verbose=False, interaction_history=interaction_history)
 
     def _calculate_tog_substring_exact_match(self, predicted_answer: str, ground_truth_answers: List[str], dataset_name: str = None) -> float:
@@ -1290,8 +1283,8 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
         """
         Calculate entity-level exact match score using entity segmentation.
         
-        This approach uses the enhanced em_check_kg function which includes
-        MultiTQ temporal granularity handling for year-only vs year-month questions.
+        This approach uses the enhanced em_check_kg function, including
+        temporal granularity handling for year-only vs year-month questions.
         
         Args:
             predicted_answer: The extracted predicted answer
@@ -1300,13 +1293,12 @@ class KGFormatMultiTurnRewardManager(KGFormatRewardManager):
             dataset_name: Optional explicit dataset name
             
         Returns:
-            float: 1.0 if match found (including MultiTQ temporal handling), 0.0 otherwise
+            float: 1.0 if match found, 0.0 otherwise
         """
         if not predicted_answer or not ground_truth_answers:
             return 0.0
         
-        # Use the enhanced em_check_kg function which includes MultiTQ temporal handling
-        # This handles year-only vs year-month questions automatically for MultiTQ
+        # Use the enhanced em_check_kg function, which also supports temporal answer handling.
         return float(em_check_kg(predicted_answer, ground_truth_answers, dataset_name=dataset_name, verbose=False, interaction_history=interaction_history))
     
     def _calculate_entity_level_f1_precision_recall(self, predicted_answer: str, ground_truth_raw) -> Dict[str, float]:

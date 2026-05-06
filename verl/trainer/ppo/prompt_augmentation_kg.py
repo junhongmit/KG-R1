@@ -24,10 +24,6 @@ Available guideline levels:
 - "detailed_hierarchical": Hierarchical format examples with query functions
 - "detailed_flat": Flat format examples with query functions
 - "detailed_flat_turn7": Multi-turn reasoning with up to 7 turns and 7 kg-queries
-- "detailed_flat_multiTQ": MultiTQ-specific temporal reasoning guidelines with timestamp filtering
-- "detailed_flat_multiTQ_v2": Enhanced MultiTQ variant with improved temporal analysis and entity extraction strategies (7 queries)
-- "detailed_flat_multiTQ_v2_q5": Enhanced MultiTQ variant with improved temporal analysis and entity extraction strategies (5 queries)
-- "detailed_flat_multiTQ_v3": Advanced MultiTQ variant with multi-phase temporal reasoning and comprehensive analytical framework
 - "detailed_flat_10arxiv": 10ArXiv-specific research paper domain reasoning with academic terminology
 - "minimal" or "detailed_minimal": Minimal prompt with basic KG functions only (for clean evaluation without extensive guidance)
 - "vanilla": Simple direct answering without KG or reasoning instructions
@@ -337,79 +333,6 @@ KG Query Examples:
 - get_entities_in("Barack Obama", "people.person.nationality")
 """
 
-DETAILED_GUIDELINE_FLAT_MULTITQ = """
-You are allowed to make up to 5 kg-queries for temporal reasoning. 
-If you encounter a KG-related error, read the error message carefully and correct your query.
-
-Use exactly these query functions for MultiTQ temporal knowledge graph:
-- get_relations_out(entity): Returns outgoing relations where the entity is the subject/head (entity → relation → ?).
-- get_relations_in(entity): Returns incoming relations where the entity is the object/tail (? → relation → entity).
-- get_entities_out(entity, relation): Returns entities connected to the given entity by the specified relation, with timepoints (entity → relation → ?).
-- get_entities_in(entity, relation): Returns entities from which the given entity is connected by the specified relation, with timepoints (? → relation → entity).
-
-Note: Entities returned by get_tail_entities and get_head_entities include timestamps in brackets (e.g., "Barack Obama [2005-01;2015-06]") showing when the relationship occurred.
-
-IMPORTANT:
-- Always begin with <think> after getting question or information.
-- Pay special attention to temporal constraints (when, during, before, after, year, date, etc.)
-- Always prefer information retrieved from the temporal KG over your internal knowledge.
-- Your answer can be multiple entities (e.g., <answer>Barack Obama</answer>, <answer>Joe Biden</answer>) or multiple time points (e.g., <answer>2005-01</answer>, <answer>2015-06</answer>) or a single entity/time point
-
-Examples of entities:
-- Events: "al-Shabaab insurgency", "World War II", "2008 financial crisis"
-- People: "Barack Obama", "Nelson Mandela", "Steve Jobs"  
-- Organizations: "United Nations", "European Union", "Panhellenic Socialist Movement"
-- Actor roles: "Protester (Egypt)", "Police (Philippines)", "Citizen (Greece)", "Social Worker (India)", "Criminal (Australia)", "Defense Attorney (Iraq)", "Men (India)", "Military (New Zealand)", "Armed Rebel (Russia)", "Business (Iran)", "Children (Philippines)"
-- Government entities: "Government (Sudan)", "Government (Libya)", "Government (Syria)"
-
-Examples of relations:
-- "Make statement"
-- "Participate in"
-- "Lead"
-- "Located in"
-- "Member of"
-
-KG Query Examples:
-- get_relations_out("Barack Obama")
-- get_relations_in("al-Shabaab insurgency")
-- get_entities_out("Barack Obama", "Make statement")
-- get_entities_in("United Kingdom", "Participate in")
-"""
-
-DETAILED_GUIDELINE_FLAT_MULTITQ_V2 = """
-You are allowed to make up to 7 kg-queries for enhanced temporal reasoning on MultiTQ questions. 
-If you encounter a KG-related error, read the error message carefully and correct your query.
-
-Use exactly these query functions for MultiTQ temporal knowledge graph:
-- get_relations_out(entity): Returns outgoing relations where the entity is the subject/head (entity → relation → ?).
-- get_relations_in(entity): Returns incoming relations where the entity is the object/tail (? → relation → entity).
-- get_entities_out(entity, relation): Returns entities connected to the given entity by the specified relation, with timepoints (entity → relation → ?).
-- get_entities_in(entity, relation): Returns entities from which the given entity is connected by the specified relation, with timepoints (? → relation → entity).
-
-Examples of entities:
-- Named entities: "Barack Obama", "Angela Merkel", "Xi Jinping", "Vladimir Putin", "Shinzo Abe", "Arab Spring", "Brexit referendum", "2016 U.S. election", "Ukrainian crisis", "United Nations", "European Union", "NATO", "ASEAN", "African Union", "United States", "China", "Germany", "Russia", "United Kingdom", "Government (Syria)", "Government (Libya)", "Government (Egypt)", "Protester (Egypt)", "Military (Ukraine)", "Business (China)", "Citizen (Greece)"
-
-IMPORTANT:
-- Your answer can be multiple entities (e.g., <answer>Barack Obama</answer>, <answer>Joe Biden</answer>) or multiple time points (e.g., <answer>2005-01</answer>, <answer>2015-06</answer>) or a single entity/time point
-"""
-
-DETAILED_GUIDELINE_FLAT_MULTITQ_V2_Q5 = """
-You are allowed to make up to 5 kg-queries for enhanced temporal reasoning on MultiTQ questions. 
-If you encounter a KG-related error, read the error message carefully and correct your query.
-
-Use exactly these query functions for MultiTQ temporal knowledge graph:
-- get_relations_out(entity): Returns outgoing relations where the entity is the subject/head (entity → relation → ?).
-- get_relations_in(entity): Returns incoming relations where the entity is the object/tail (? → relation → entity).
-- get_entities_out(entity, relation): Returns entities connected to the given entity by the specified relation, with timepoints (entity → relation → ?).
-- get_entities_in(entity, relation): Returns entities from which the given entity is connected by the specified relation, with timepoints (? → relation → entity).
-
-Examples of entities:
-- Named entities: "Barack Obama", "Angela Merkel", "Xi Jinping", "Vladimir Putin", "Shinzo Abe", "Arab Spring", "Brexit referendum", "2016 U.S. election", "Ukrainian crisis", "United Nations", "European Union", "NATO", "ASEAN", "African Union", "United States", "China", "Germany", "Russia", "United Kingdom", "Government (Syria)", "Government (Libya)", "Government (Egypt)", "Protester (Egypt)", "Military (Ukraine)", "Business (China)", "Citizen (Greece)"
-
-IMPORTANT:
-- Your answer can be multiple entities (e.g., <answer>Barack Obama</answer>, <answer>Joe Biden</answer>) or multiple time points (e.g., <answer>2005-01</answer>, <answer>2015-06</answer>) or a single entity/time point
-"""
-
 DETAILED_GUIDELINE_MINIMAL = """
 If you encounter a KG-related error, read the error message carefully and correct your query.
 
@@ -483,7 +406,7 @@ class PromptAugmentor:
         
         Args:
             enable: Whether to enable prompt augmentation
-            guideline_level: Level of guidelines ("extensive", "detailed", "detailed_hierarchical", "detailed_flat", "detailed_flat_multiTQ", "detailed_flat_10arxiv", or None)
+            guideline_level: Level of guidelines ("extensive", "detailed", "detailed_hierarchical", "detailed_flat", "detailed_flat_10arxiv", or None)
             hint_steps: Number of training steps to apply hints (0 = unlimited)
             current_step: Current training step
         """
@@ -518,14 +441,6 @@ class PromptAugmentor:
             return DETAILED_GUIDELINE_FLAT
         elif self.guideline_level == "detailed_flat_turn7":
             return DETAILED_GUIDELINE_FLAT_TURN7
-        elif self.guideline_level == "detailed_flat_multiTQ":
-            return DETAILED_GUIDELINE_FLAT_MULTITQ
-        elif self.guideline_level == "detailed_flat_multiTQ_v2":
-            return DETAILED_GUIDELINE_FLAT_MULTITQ_V2
-        elif self.guideline_level == "detailed_flat_multiTQ_v2_q5":
-            return DETAILED_GUIDELINE_FLAT_MULTITQ_V2_Q5
-        elif self.guideline_level == "detailed_flat_multiTQ_v3":
-            return DETAILED_GUIDELINE_FLAT_MULTITQ_V3
         elif self.guideline_level == "detailed_flat_10arxiv":
             return DETAILED_GUIDELINE_FLAT_10ARXIV
         elif self.guideline_level == "detailed_minimal" or self.guideline_level == "minimal":

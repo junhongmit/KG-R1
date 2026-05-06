@@ -67,7 +67,6 @@ A: Yes. Download `freebase-rdf-latest.gz`, then run `bash scripts/process_entiti
 ## 📚 More Information
 
 - **Full Documentation**: [scripts/README.md](README.md)
-- **MultiTQ Details**: [data_multitq_kg/README.md](data_multitq_kg/README.md)
 - **WebQSP Details**: [webqsp_kg/README.md](webqsp_kg/README.md)
 
 ---

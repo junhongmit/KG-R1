@@ -117,7 +117,6 @@ class LLMGenerationManager:
             "simpleqa": os.environ.get("SIMPLEQA_SERVER_URL", "http://127.0.0.1:9001/retrieve"),
             "cwq": os.environ.get("CWQ_SERVER_URL", "http://127.0.0.1:8001/retrieve"),
             "webqsp": os.environ.get("WEBQSP_SERVER_URL", "http://127.0.0.1:8001/retrieve"),
-            "multitq": os.environ.get("MULTITQ_SERVER_URL", "http://127.0.0.1:8001/retrieve"),
             "metaqa": os.environ.get("METAQA_SERVER_URL", "http://127.0.0.1:9002/retrieve"),
             "grailqa": os.environ.get("GRAILQA_SERVER_URL", "http://127.0.0.1:9000/retrieve"),
             "trex": os.environ.get("TREX_SERVER_URL", "http://127.0.0.1:9011/retrieve"),
@@ -517,7 +516,7 @@ class LLMGenerationManager:
         
         interaction_history = []
         for i in range(actual_batch_size):
-            # Include data_source in each sample's interaction history for MultiTQ detection
+            # Include data_source in each sample's interaction history for dataset-aware reward handling
             sample_data_source = ''
             if dataset_names and i < len(dataset_names):
                 sample_data_source = str(dataset_names[i])
@@ -1538,8 +1537,6 @@ class LLMGenerationManager:
                     fallback_dataset_name = "webqsp"
                 elif data_source in ["cwq_kg", "cwq"]:
                     fallback_dataset_name = "CWQ"
-                elif data_source in ["kgR1_multitq", "multitq"]:
-                    fallback_dataset_name = "multitq"
                 else:
                     fallback_dataset_name = "webqsp"  # Safe fallback
             else:
@@ -1690,5 +1687,3 @@ class LLMGenerationManager:
         else:
             # Generic fallback for any other HTTP transport issues
             return f"KG server request failed for {entity_name}"
-
-

@@ -27,7 +27,6 @@ BENCHMARKS=(
     "grailqa:9000:grailqa_search_augmented_initial_entities"
     "simpleqa:9001:simpleqa_search_augmented_initial_entities"
     "qald10en:9010:qald10en_search_augmented_initial_entities"
-    "multitq:9013:multitq_search_augmented_initial_entities"
 )
 
 export CUDA_VISIBLE_DEVICES=0,1,2,3

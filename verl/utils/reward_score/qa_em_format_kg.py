@@ -32,8 +32,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../../../kg_r1/search')
 from error_types import KGErrorType
 
 
-def normalize_temporal_multitq(text):
-    """Normalize temporal expressions for MultiTQ, handling comma-separated lists"""
+def normalize_temporal_answer(text):
+    """Normalize temporal expressions, handling comma-separated lists."""
     import re
     from datetime import datetime
     
@@ -85,8 +85,8 @@ def _normalize_single_temporal_item(text):
     return text
 
 
-def _remove_temporal_annotations_multitq(text):
-    """Remove temporal annotations like [YYYY-MM] from entity names for MultiTQ"""
+def _remove_temporal_annotations(text):
+    """Remove temporal annotations like [YYYY-MM] from entity names."""
     import re
     
     # Remove temporal brackets like [2008-11], [2012-07]
@@ -116,13 +116,13 @@ def normalize_answer(s, dataset_name=None):
     def lower(text):
         return text.lower()
 
-    # Check for MultiTQ temporal normalization before standard processing
-    if dataset_name and dataset_name.lower() in ['multitq', 'kgr1_multitq']:
+    # Optional temporal normalization path for temporal KG datasets.
+    if dataset_name and 'temporal' in dataset_name.lower():
         # First remove temporal annotations like [2008-07] from entity names
-        text_without_annotations = _remove_temporal_annotations_multitq(s)
+        text_without_annotations = _remove_temporal_annotations(s)
         
         # Then apply temporal normalization on the cleaned text
-        temporal_normalized = normalize_temporal_multitq(lower(text_without_annotations))
+        temporal_normalized = normalize_temporal_answer(lower(text_without_annotations))
         
         # If temporal normalization produced YYYY-MM format(s), use as-is (don't remove hyphens)
         # Check for single YYYY-MM or comma-separated YYYY-MM, YYYY-MM pattern
@@ -133,7 +133,7 @@ def normalize_answer(s, dataset_name=None):
             # No temporal conversion happened, proceed with standard normalization on cleaned text
             return white_space_fix(remove_articles(remove_punc(lower(text_without_annotations))))
     else:
-        # Standard normalization for non-MultiTQ datasets
+        # Standard normalization for non-temporal datasets
         return white_space_fix(remove_articles(remove_punc(lower(s))))
 
 
@@ -285,7 +285,7 @@ def extract_kg_query_stats(solution_str: str, interaction_history: Dict) -> Dict
 
 
 def is_year_only_question(ground_truth_answers: List[str]) -> bool:
-    """Check if this is a year-only question (vs year-month) for MultiTQ temporal granularity."""
+    """Check if this is a year-only question (vs year-month)."""
     if not ground_truth_answers:
         return False
     
@@ -322,7 +322,7 @@ def em_check_kg(prediction: str, golden_answers: Union[str, List[str]], dataset_
     Args:
         prediction: The prediction text from the model
         golden_answers: Ground truth answer(s) 
-        dataset_name: Dataset name for dataset-specific normalization (e.g., "multitq")
+        dataset_name: Dataset name for dataset-specific normalization
         verbose: If True, print detailed normalization steps
     """
     if isinstance(golden_answers, str):
@@ -342,39 +342,39 @@ def em_check_kg(prediction: str, golden_answers: Union[str, List[str]], dataset_
     # First try exact match with the full extracted answer
     normalized_prediction = normalize_answer(extracted_answer, dataset_name)
     
-    # MultiTQ-specific temporal granularity handling
-    multitq_year_processed = False
-    is_multitq = (
-        (dataset_name and 'multitq' in dataset_name.lower()) or
-        (interaction_history and 'multitq' in str(interaction_history.get('data_source', '')).lower())
+    # Temporal granularity handling for year-only vs year-month answers.
+    temporal_year_processed = False
+    is_temporal_dataset = (
+        (dataset_name and 'temporal' in dataset_name.lower()) or
+        (interaction_history and 'temporal' in str(interaction_history.get('data_source', '')).lower())
     )
     
-    # Debug logging for MultiTQ detection
+    # Debug logging for temporal-dataset detection
     if verbose or True:  # Always show for debugging
-        print(f"[DEBUG-MultiTQ] dataset_name: '{dataset_name}'")
-        print(f"[DEBUG-MultiTQ] interaction_history data_source: '{interaction_history.get('data_source', '') if interaction_history else 'NO_HISTORY'}'")
-        print(f"[DEBUG-MultiTQ] is_multitq: {is_multitq}")
-        print(f"[DEBUG-MultiTQ] ground_truth: {golden_answers}")
+        print(f"[DEBUG-TEMPORAL] dataset_name: '{dataset_name}'")
+        print(f"[DEBUG-TEMPORAL] interaction_history data_source: '{interaction_history.get('data_source', '') if interaction_history else 'NO_HISTORY'}'")
+        print(f"[DEBUG-TEMPORAL] is_temporal_dataset: {is_temporal_dataset}")
+        print(f"[DEBUG-TEMPORAL] ground_truth: {golden_answers}")
     
-    if is_multitq:
+    if is_temporal_dataset:
         is_year_only = is_year_only_question(golden_answers)
         if is_year_only:
             # For year-only questions, extract years from timestamps
             year_extracted = extract_year_from_timestamps(extracted_answer)
             year_normalized = normalize_answer(year_extracted, dataset_name)
-            multitq_year_processed = True
+            temporal_year_processed = True
             
             if verbose:
-                print(f"[MultiTQ-TEMPORAL] ===== YEAR-ONLY QUESTION DETECTED =====")
-                print(f"[MultiTQ-TEMPORAL] Original extracted: '{extracted_answer}'")
-                print(f"[MultiTQ-TEMPORAL] Year-extracted: '{year_extracted}'")
-                print(f"[MultiTQ-TEMPORAL] Year-normalized: '{year_normalized}'")
-                print(f"[MultiTQ-TEMPORAL] Ground truth (year): {golden_answers}")
+                print(f"[TEMPORAL-MATCH] ===== YEAR-ONLY QUESTION DETECTED =====")
+                print(f"[TEMPORAL-MATCH] Original extracted: '{extracted_answer}'")
+                print(f"[TEMPORAL-MATCH] Year-extracted: '{year_extracted}'")
+                print(f"[TEMPORAL-MATCH] Year-normalized: '{year_normalized}'")
+                print(f"[TEMPORAL-MATCH] Ground truth (year): {golden_answers}")
             
             # Check year-based match first
             if year_normalized in normalized_golden_answers:
                 if verbose:
-                    print(f"[MultiTQ-TEMPORAL] ✅ YEAR-BASED MATCH: '{year_normalized}' in {normalized_golden_answers}")
+                    print(f"[TEMPORAL-MATCH] ✅ YEAR-BASED MATCH: '{year_normalized}' in {normalized_golden_answers}")
                 return 1.0
             
             # Update the normalized prediction for further processing
@@ -387,8 +387,8 @@ def em_check_kg(prediction: str, golden_answers: Union[str, List[str]], dataset_
         print(f"[EM-DEBUG] Raw ground truth: {golden_answers}")
         print(f"[EM-DEBUG] Normalized ground truth: {normalized_golden_answers}")
         print(f"[EM-DEBUG] Dataset name: {dataset_name}")
-        if multitq_year_processed:
-            print(f"[EM-DEBUG] MultiTQ year processing: APPLIED")
+        if temporal_year_processed:
+            print(f"[EM-DEBUG] Temporal year processing: APPLIED")
     
     # Regular exact match check (this may be redundant if year processing found match)
     if normalized_prediction in normalized_golden_answers:
@@ -546,7 +546,7 @@ def is_retrieval_correct_kg(text: str, golden_answers: List[str], interaction_hi
         text: The assistant response text (unused, kept for compatibility)
         golden_answers: List of correct answers to check for
         interaction_history: Dict containing actual retrieval results (required)
-        dataset_name: Dataset name for dataset-specific normalization (e.g., "multitq")
+        dataset_name: Dataset name for dataset-specific normalization
     """
     # Check search_results (formatted observations shown to LLM)
     if 'search_results' in interaction_history:
@@ -869,14 +869,10 @@ def compute_score_em_kg_refactored(
     # Add logging for all KG evaluation examples
     # Determine dataset name from available data
     dataset_type = 'UNKNOWN'
-    if dataset_name and 'multitq' in dataset_name.lower():
-        dataset_type = 'MultiTQ'
-    elif dataset_name and 'cwq' in dataset_name.lower():
+    if dataset_name and 'cwq' in dataset_name.lower():
         dataset_type = 'CWQ'
     elif dataset_name and 'webqsp' in dataset_name.lower():
         dataset_type = 'WebQSP'
-    elif 'multitq' in str(interaction_history.get('data_source', '')).lower():
-        dataset_type = 'MultiTQ'
     elif 'cwq' in str(interaction_history.get('data_source', '')).lower():
         dataset_type = 'CWQ'
     elif 'webqsp' in str(interaction_history.get('data_source', '')).lower():
@@ -999,4 +995,3 @@ def compute_score_em_kg_refactored(
             "method": "refactored_kg_aware"
         } if verbose else {}
     }
-
